@@ -175,6 +175,79 @@ crawl_depth_overrides:
   volkskrant.nl: 1
   nrc.nl: 1
   default: 1
+  # Party sites (STAP 2)
+  vvd.nl: 1
+  d66.nl: 1
+  pvv.nl: 1
+  cda.nl: 1
+  sp.nl: 1
+  groenlinkspvda.nl: 1
+  partijnieuwsociaalcontract.nl: 1
+  boerburgerbeweging.nl: 1
+  sgp.nl: 1
+  christenunie.nl: 1
+  # Media sites (STAP 2)
+  rtlnieuws.nl: 1
+  nu.nl: 1
+  trouw.nl: 1
+  ad.nl: 1
+  parool.nl: 1
+  # Lobby organisations — broad crawl (STAP 2)
+  standwithus.com: 2
+  likud.nl: 2
+  friendsofisrael.nl: 2
+  eajc.org: 2
+  israelendemedia.nl: 2
+  ec4i.org: 2
+  palestinadosier.nl: 2
+  christenenvoorisrael.nl: 2
+  cufi.org: 2
+  israelandthechurch.org: 2
+  christenenvoorisraelmedia.nl: 2
+  bethel.com: 2
+  zendingaanisrael.nl: 2
+  nik.nl: 2
+  centraaljoodsoverleg.nl: 2
+  nihs.nl: 2
+  annefrank.org: 2
+  jck.nl: 2
+  kampwesterbork.nl: 2
+  ojcn.nl: 2
+  zionistischefederatie.org: 2
+  embassies.gov.il: 2
+  innovationisrael.org.il: 2
+  gov.il: 2
+  mdra.nl: 2
+  kickoutzwartepiet.nl: 2
+  ncdr.nl: 2
+  hetccv.nl: 2
+  bdsnederland.nl: 2
+  rightsforum.org: 2
+  eajg.nl: 2
+  stopdebezetting.nl: 2
+  al-awda.org: 2
+  oxfamnovib.nl: 2
+  icco-cooperation.org: 2
+  doorbraak.eu: 2
+  thepostonline.nl: 2
+  geenstijl.nl: 2
+  wyniasweek.nl: 2
+  cafeweltschmerz.nl: 2
+  vpro.nl: 2
+  wnl.tv: 2
+  npostart.nl: 2
+  # EU register actors (STAP 2)
+  eurojewcong.org: 1
+  bnaibrith.org: 1
+  # Government actors (STAP 2)
+  nctv.nl: 1
+  aivd.nl: 1
+  politie.nl: 1
+  amsterdam.nl: 1
+  # Academic actors (STAP 2)
+  uva.nl: 1
+  yadvashem.org: 1
+  centre-for-sustainability.nl: 1
 
 # === SEED DOMAIN LINK-FILTERING ===
 # Per domein: welke URL-paden mogen gecrawld worden.
@@ -187,6 +260,7 @@ seed_domains:
       - "/onderwerpen/midden-oosten"
       - "/onderwerpen/antisemitisme"
       - "/onderwerpen/buitenlands-beleid"
+      - "/nieuws"
       - "/kamerstuk"
       - "/brief"
       - "/rapport"
@@ -205,6 +279,138 @@ seed_domains:
   christenenvoorisrael.nl:
     allowed_path_patterns: []
     max_depth: 2
+  # Party sites (STAP 2)
+  vvd.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  d66.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  pvv.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  cda.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  sp.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  groenlinkspvda.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  partijnieuwsociaalcontract.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  boerburgerbeweging.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  sgp.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  christenunie.nl:
+    allowed_path_patterns:
+      - "/standpunten"
+      - "/nieuws"
+      - "/israel"
+      - "/buitenland"
+      - "/kamerstuk"
+      - "/debat"
+    max_depth: 1
+  # Media sites (STAP 2)
+  nos.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
+  volkskrant.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
+  nrc.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
+  rtlnieuws.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
+  nu.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
+  trouw.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
+  ad.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
+  parool.nl:
+    allowed_path_patterns:
+      - "/artikel"
+      - "/nieuws"
+    max_depth: 1
   transparency-register.europa.eu:
     allowed_path_patterns:
       - "/public-consultation"
@@ -245,3 +451,23 @@ relevance_keywords:
   - wapenexport
   - genocide
   - appartheid
+  - f-35
+  - defensiebedrijf
+  - elbit
+  - iaf
+  - iron dome
+  - two-state
+  - twee-staten
+  - veiligheidsraad
+  - resolutie
+  - mensenrechten
+  - oorlogsmisdaden
+  - icc
+  - internationaal gerechtshof
+  - icj
+  - navo
+  - diplomatieke betrekkingen
+  - handelsrelaties
+  - boycot
+  - sancties
+  - apartheid

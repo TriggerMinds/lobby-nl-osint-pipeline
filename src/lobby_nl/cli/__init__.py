@@ -12,6 +12,7 @@ Usage:
 
 from __future__ import annotations
 
+import csv
 import json
 import time
 from pathlib import Path
@@ -37,6 +38,118 @@ def _get_output_dir() -> Path:
 
 def _get_reports_dir() -> Path:
     return Path("reports")
+
+
+def _load_manual_seeds(csv_path: Optional[Path] = None) -> list[dict]:
+    """Load manual_seeds.csv and return list of seed dicts."""
+    if csv_path is None:
+        csv_path = Path("data/input/manual_seeds.csv")
+    if not csv_path.exists():
+        console.log(f"[SEEDS] {csv_path} niet gevonden — seeds overgeslagen")
+        return []
+    seeds: list[dict] = []
+    with open(csv_path, encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            seeds.append(dict(row))
+    console.log(f"[SEEDS] {len(seeds)} seeds geladen uit {csv_path}")
+    return seeds
+
+
+def _pre_seed_actors(seeds: list[dict], output_path: Optional[Path] = None) -> list:
+    """Create Actor objects from manual seeds and persist to JSON."""
+    from lobby_nl.models import Actor, ActorCategory, CertaintyLevel, InclusionType
+
+    if output_path is None:
+        output_path = Path("exports/seed_actors.json")
+    actors: list = []
+    for seed in seeds:
+        if not seed.get("actor_id") or not seed.get("name"):
+            continue
+        try:
+            category = ActorCategory(seed.get("category", "unknown"))
+        except ValueError:
+            category = ActorCategory.unknown
+        raw_source_id = (seed.get("source_id") or "").strip()
+        raw_notes = seed.get("notes") or ""
+        actor = Actor(
+            actor_id=seed["actor_id"],
+            name=seed["name"],
+            category=category,
+            description=seed.get("description", ""),
+            source_ids=[raw_source_id] if raw_source_id else [],
+            notes=raw_notes if "seed_only" in raw_notes else f"{raw_notes} — seed_only".strip(" —"),
+            website=seed.get("url", ""),
+            certainty=CertaintyLevel.uncertainty,
+            inclusion_type=InclusionType.source_backed,
+            inclusion_rationale="Pre-seeded from manual_seeds.csv — awaiting collection verification",
+        )
+        actors.append(actor)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps([a.model_dump() for a in actors], indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    console.log(f"[SEEDS] {len(actors)} actors gepre-seed naar {output_path}")
+    return actors
+
+
+def _load_seed_actors(seed_path: Optional[Path] = None) -> list:
+    """Load pre-seeded actors from JSON file."""
+    from lobby_nl.models import Actor
+
+    if seed_path is None:
+        seed_path = Path("exports/seed_actors.json")
+    if not seed_path.exists():
+        return []
+    try:
+        data = json.loads(seed_path.read_text(encoding="utf-8"))
+        return [Actor(**a) for a in data]
+    except (json.JSONDecodeError, ValueError, KeyError) as e:
+        console.log(f"[SEEDS] Corrupt seed_actors.json, rebuilding: {e}")
+        return []
+
+
+def _load_seed_actors_with_dedup() -> tuple[list, set[str]]:
+    """Load pre-seeded actors and build dedup name set."""
+    seed_actors = _load_seed_actors()
+    seed_names: set[str] = set()
+    if seed_actors:
+        for sa in seed_actors:
+            seed_names.add(sa.name.lower().strip())
+        console.log(f"[EXTRACT] {len(seed_actors)} pre-seeded actors geladen")
+    return seed_actors, seed_names
+
+
+def _log_seed_verification(seeds: list[dict], collected_sources: list) -> None:
+    """Log seed verification: which were successfully crawled vs still seed_only."""
+    from lobby_nl.models import Source
+    collected_urls: set[str] = set()
+    for s in collected_sources:
+        if isinstance(s, Source) and not s.is_dead:
+            collected_urls.add(s.url.rstrip("/"))
+        elif isinstance(s, dict) and not s.get("is_dead"):
+            collected_urls.add(s.get("url", "").rstrip("/"))
+
+    verified = 0
+    still_seed = 0
+    for seed in seeds:
+        seed_url = seed.get("url", "").rstrip("/")
+        if seed_url in collected_urls:
+            verified += 1
+        else:
+            still_seed += 1
+
+    total = len(seeds)
+    console.log(f"[SEEDS] {total} seeds geladen — {verified} geverifieerd, {still_seed} nog seed_only")
+
+
+def _get_seed_urls(seeds: list[dict], existing_urls: set[str]) -> list[str]:
+    """Get seed URLs not already in the existing URL set, mutating the set."""
+    new_urls: list[str] = []
+    for s in seeds:
+        seed_url = s.get("url", "")
+        if seed_url and seed_url not in existing_urls:
+            new_urls.append(seed_url)
+            existing_urls.add(seed_url)
+    return new_urls
 
 
 @app.command()
@@ -75,6 +188,14 @@ def collect(
         elif isinstance(data, dict) and "urls" in data:
             urls = data["urls"]
 
+    seeds = _load_manual_seeds()
+    if seeds:
+        _pre_seed_actors(seeds)
+        new_seed_urls = _get_seed_urls(seeds, set(urls))
+        if new_seed_urls:
+            urls.extend(new_seed_urls)
+            console.log(f"[SEEDS] {len(new_seed_urls)} seed URLs toegevoegd aan collect-queue")
+
     console.log(f"[COLLECT] {len(urls)} seed URLs, depth=domain-config")
     t_start = time.time()
 
@@ -106,6 +227,9 @@ def collect(
     console.log(f"[DIAGNOSTICS] {dpath}")
     console.log(f"[DIAGNOSTICS] {mpath}")
     web._check_failure_threshold()
+
+    if seeds:
+        _log_seed_verification(seeds, sources)
 
     all_data = {
         "sources": [s.model_dump() for s in sources],
@@ -143,6 +267,10 @@ def extract(
     relationships: list[Relationship] = []
     sources: list[Source] = []
 
+    seed_actors, seed_names = _load_seed_actors_with_dedup()
+    for sa in seed_actors:
+        actors.append(sa)
+
     for raw in raw_sources:
         src = Source(**raw)
         if not src.content_hash and src.content_text:
@@ -155,6 +283,8 @@ def extract(
         try:
             found_actors = actor_extractor.extract_actors_from_source(src)
             for name, category in found_actors:
+                if name.lower().strip() in seed_names:
+                    continue
                 actor = Actor(
                     name=name,
                     category=category,
@@ -451,6 +581,18 @@ def full_pipeline(
                 ],
             }
 
+            seeds_pipeline = _load_manual_seeds()
+            if seeds_pipeline:
+                _pre_seed_actors(seeds_pipeline)
+                existing_cluster_urls: set[str] = set()
+                for cu_list in cluster_urls.values():
+                    for cu in cu_list:
+                        existing_cluster_urls.add(cu)
+                seed_urls_unique = _get_seed_urls(seeds_pipeline, existing_cluster_urls)
+                if seed_urls_unique:
+                    cluster_urls["manual_seeds"] = seed_urls_unique
+                    console.log(f"[SEEDS] {len(seed_urls_unique)} seed URLs toegevoegd aan collect-queue")
+
             url_index = 0
             total_seeds = sum(len(v) for v in cluster_urls.values())
             for cluster, cluster_urls_list in cluster_urls.items():
@@ -479,6 +621,9 @@ def full_pipeline(
             console.log(f"[DIAGNOSTICS] {dpath}")
             console.log(f"[DIAGNOSTICS] {mpath}")
             web._check_failure_threshold()
+
+            if seeds_pipeline:
+                _log_seed_verification(seeds_pipeline, sources)
 
             opacity_signals = [s.model_dump() for s in web.opacity_signals]
             if opacity_signals:
@@ -518,6 +663,10 @@ def full_pipeline(
         relationships: list[Relationship] = []
         sources: list[Source] = []
 
+        pipeline_seed_actors, pipeline_seed_names = _load_seed_actors_with_dedup()
+        for psa in pipeline_seed_actors:
+            actors.append(psa)
+
         for raw in raw_sources:
             src = Source(**raw)
             if not src.content_hash and src.content_text:
@@ -529,6 +678,8 @@ def full_pipeline(
             try:
                 found_actors = actor_extractor.extract_actors_from_source(src)
                 for name, category in found_actors:
+                    if name.lower().strip() in pipeline_seed_names:
+                        continue
                     actor = Actor(name=name, category=category, source_ids=[src.source_id], description=f"Extracted from {src.url}")
                     actors.append(actor)
                 found_claims = claim_extractor.extract_claims(src, [a.actor_id for a in actors])
