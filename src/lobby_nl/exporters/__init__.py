@@ -386,6 +386,20 @@ class CSVExporter:
             "obstruction_risk_log.csv", obstruction_rows
         )
 
+        # Archive diffs and source disappearance logs
+        archive_diff_headers = [
+            "url", "changed", "current_hash", "archived_hash",
+            "diff_line_count", "diff_preview", "date_detected",
+        ]
+        arch_diffs: list[dict[str, Any]] = []
+        self._write_csv("archived_source_diffs.csv", arch_diffs, fieldnames=archive_diff_headers)
+        results["archived_source_diffs.csv"] = self.output_dir / "archived_source_diffs.csv"
+
+        disappearance_headers = ["url", "reason", "date_detected"]
+        disappearances: list[dict[str, Any]] = []
+        self._write_csv("source_disappearance_log.csv", disappearances, fieldnames=disappearance_headers)
+        results["source_disappearance_log.csv"] = self.output_dir / "source_disappearance_log.csv"
+
         return results
 
     # --- AANVULLENDE ---

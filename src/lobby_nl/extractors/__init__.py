@@ -222,3 +222,85 @@ class ClaimExtractor:
                     }
                 )
         return claims
+
+
+class MediaFramingExtractor:
+    """Detects repeated framing patterns and actor-keyword co-occurrence in sources.
+
+    Populates the media_framing_log.csv with concrete detections.
+    """
+
+    FRAMING_KEYWORDS: dict[str, list[str]] = {
+        "conflict_frame": [
+            "conflict", "oorlog", "strijd", "aanval", "gevecht",
+            "escalatie", "geweld", "bombardement", "raket",
+        ],
+        "victim_frame": [
+            "slachtoffer", "onschuldig", "burgerdoden", "humanitair",
+            "lijden", "getroffen", "vluchteling",
+        ],
+        "security_frame": [
+            "veiligheid", "dreiging", "terrorisme", "extremisme",
+            "radicalisering", "veiligheidsdienst",
+        ],
+        "legitimacy_frame": [
+            "recht op bestaan", "legitiem", "soevereiniteit",
+            "erkennen", "tweestatenoplossing",
+        ],
+        "antisemitism_frame": [
+            "antisemitisme", "jodenhaat", "antisemitisch",
+            "jodenster", "holocaust",
+        ],
+        "apartheid_frame": [
+            "apartheid", "bezetting", "kolonisatie", "nederzettingen",
+            "bezette gebieden", "mensenrechten",
+        ],
+        "lobby_frame": [
+            "lobby", "beïnvloeding", "invloed", "belangenbehartiging",
+            "pressiegroep", "sponsoring",
+        ],
+    }
+
+    def extract_framing(
+        self, source: Source, actor_ids: list[str], actor_names: dict[str, str]
+    ) -> list[dict[str, Any]]:
+        """Detect framing patterns and actor-keyword co-occurrences in a source."""
+        results: list[dict[str, Any]] = []
+        if not source.content_text:
+            return results
+        text_lower = source.content_text.lower()
+        for frame_name, keywords in self.FRAMING_KEYWORDS.items():
+            matched = [kw for kw in keywords if kw in text_lower]
+            if len(matched) >= 2:
+                found_actors = [
+                    actor_names.get(aid, "")
+                    for aid in actor_ids
+                    if actor_names.get(aid, "").lower() in text_lower
+                ]
+                results.append({
+                    "source_url": source.url,
+                    "frame_type": frame_name,
+                    "matched_keywords": "|".join(matched),
+                    "match_count": len(matched),
+                    "actor_names": "|".join(found_actors) if found_actors else "",
+                    "actor_ids": "|".join(actor_ids) if actor_ids else "",
+                })
+        return results
+
+    def extract_batch(
+        self,
+        sources: list[Source],
+        actors: list[Actor],
+    ) -> list[dict[str, Any]]:
+        """Extract framing patterns across all sources."""
+        actor_name_lookup = {a.actor_id: a.name for a in actors}
+        all_framing: list[dict[str, Any]] = []
+        for src in sources:
+            found_actor_ids = [
+                actor_name_lookup[name]
+                for name in actor_name_lookup
+                if src.content_text and name in src.content_text.lower()
+            ]
+            framing = self.extract_framing(src, found_actor_ids, actor_name_lookup)
+            all_framing.extend(framing)
+        return all_framing

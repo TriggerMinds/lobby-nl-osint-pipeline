@@ -1,0 +1,161 @@
+# Lobby NL OSINT Pipeline — Seed URLs Configuration
+# Organiseer seed URLs per hoofdcategorie
+
+# === HOOFDCATEGORIE 1: Pro-Israël organisaties ===
+pro_israel_org:
+  - url: "https://www.cidi.nl/"
+    category: "pro_israel_org"
+    name: "CIDI - Centrum Informatie en Documentatie Israël"
+  - url: "https://www.cidi.nl/over-cidi"
+    category: "pro_israel_org"
+    name: "CIDI Over"
+  - url: "https://www.cidi.nl/nieuws"
+    category: "pro_israel_org"
+    name: "CIDI Nieuws"
+  - url: "https://www.nik.nl/"
+    category: "jewish_civic_org"
+    name: "NIK - Nederlands-Israëlitisch Kerkgenootschap"
+
+# === HOOFDCATEGORIE 2: Christenzionistische organisaties ===
+christian_zionist_org:
+  - url: "https://www.christenenvoorisrael.nl/"
+    category: "christian_zionist_org"
+    name: "Christenen voor Israël"
+  - url: "https://www.christenenvoorisrael.nl/over-ons"
+    category: "christian_zionist_org"
+    name: "CvI Over Ons"
+  - url: "https://www.christenenvoorisrael.nl/nieuws"
+    category: "christian_zionist_org"
+    name: "CvI Nieuws"
+  - url: "https://www.cvi.nl/"
+    category: "christian_zionist_org"
+    name: "CVI International"
+
+# === HOOFDCATEGORIE 3: Joodse maatschappelijke organisaties ===
+jewish_civic_org:
+  - url: "https://www.cjo.nl/"
+    category: "jewish_civic_org"
+    name: "Centraal Joods Overleg"
+  - url: "https://www.joods.nl/"
+    category: "jewish_civic_org"
+    name: "Joods.nl"
+  - url: "https://www.verbondprogressiefjodendom.nl/"
+    category: "jewish_civic_org"
+    name: "Verbond Progressief Jodendom"
+  - url: "https://www.jck.nl/"
+    category: "jewish_civic_org"
+    name: "Joods Cultureel Kwartier"
+
+# === HOOFDCATEGORIE 4: Israëlische diplomatieke kanalen ===
+israeli_diplomatic_channel:
+  - url: "https://embassies.gov.il/thehague/"
+    category: "israeli_diplomatic_channel"
+    name: "Ambassade van Israël - Den Haag"
+  - url: "https://embassies.gov.il/thehague/AboutTheEmbassy/"
+    category: "israeli_diplomatic_channel"
+    name: "Ambassade - Over"
+  - url: "https://embassies.gov.il/thehague/News/"
+    category: "israeli_diplomatic_channel"
+    name: "Ambassade - Nieuws"
+
+# === HOOFDCATEGORIE 5: Antisemitismebestrijding infrastructuur ===
+antisemitism_policy_infrastructure:
+  - url: "https://www.nida.nl/"
+    category: "antisemitism_policy_infrastructure"
+    name: "Nationaal Coördinator Antisemitisme (NIDA)"
+  - url: "https://www.rijksoverheid.nl/onderwerpen/antisemitisme"
+    category: "antisemitism_policy_infrastructure"
+    name: "Rijksoverheid Antisemitisme"
+  - url: "https://www.meldpuntantisemitisme.nl/"
+    category: "antisemitism_policy_infrastructure"
+    name: "Meldpunt Antisemitisme"
+
+# === HOOFDCATEGORIE 6: Parlementaire netwerken ===
+parliamentary_networks:
+  - url: "https://www.tweedekamer.nl/"
+    category: "parliamentary_actor"
+    name: "Tweede Kamer"
+  - url: "https://www.eerstekamer.nl/"
+    category: "parliamentary_actor"
+    name: "Eerste Kamer"
+  - url: "https://www.tweedekamer.nl/kamerstukken"
+    category: "parliamentary_actor"
+    name: "Tweede Kamer Kamerstukken"
+  - url: "https://www.tweedekamer.nl/commissies"
+    category: "parliamentary_actor"
+    name: "Tweede Kamer Commissies"
+
+# === HOOFDCATEGORIE 7: Tegenlobby Palestina-rechten ===
+palestine_rights_counter_lobby:
+  - url: "https://www.palestina-komitee.nl/"
+    category: "palestine_rights_counter_lobby"
+    name: "Palestina Komitee"
+  - url: "https://www.docp.nl/"
+    category: "palestine_rights_counter_lobby"
+    name: "DOCP - Dutch Palestine Committee"
+  - url: "https://www.therightsforum.org/"
+    category: "palestine_rights_counter_lobby"
+    name: "The Rights Forum"
+  - url: "https://www.bdsnederland.nl/"
+    category: "palestine_rights_counter_lobby"
+    name: "BDS Nederland"
+
+# === HOOFDCATEGORIE 8: EU Register actoren ===
+eu_register_actor:
+  - url: "https://lobbying.eu/search?q=israel"
+    category: "eu_register_actor"
+    name: "EU Lobby Register - Israel"
+  - url: "https://lobbying.eu/search?q=palestine"
+    category: "eu_register_actor"
+    name: "EU Lobby Register - Palestine"
+  - url: "https://lobbying.eu/search?q=antisemitism"
+    category: "eu_register_actor"
+    name: "EU Lobby Register - Antisemitism"
+
+# === MEDIA ===
+media_organisations:
+  - url: "https://nos.nl/"
+    category: "public_broadcaster_actor"
+    name: "NOS"
+  - url: "https://www.volkskrant.nl/"
+    category: "media_actor"
+    name: "De Volkskrant"
+  - url: "https://www.nrc.nl/"
+    category: "media_actor"
+    name: "NRC"
+  - url: "https://www.telegraaf.nl/"
+    category: "media_actor"
+    name: "De Telegraaf"
+  - url: "https://www.trouw.nl/"
+    category: "media_actor"
+    name: "Trouw"
+  - url: "https://www.ad.nl/"
+    category: "media_actor"
+    name: "AD"
+  - url: "https://www.parool.nl/"
+    category: "media_actor"
+    name: "Het Parool"
+
+# === ALTERNATIVE MEDIA ===
+alternative_media:
+  - url: "https://decorrespondent.nl/"
+    category: "alternative_media_actor"
+    name: "De Correspondent"
+  - url: "https://www.ftm.nl/"
+    category: "alternative_media_actor"
+    name: "Follow the Money"
+  - url: "https://www.joop.nl/"
+    category: "alternative_media_actor"
+    name: "Joop"
+
+# === THINK TANKS & ACADEMICS ===
+think_tanks_academics:
+  - url: "https://www.clingendael.org/"
+    category: "think_tank_actor"
+    name: "Clingendael"
+  - url: "https://hcss.nl/"
+    category: "think_tank_actor"
+    name: "HCSS - The Hague Centre"
+  - url: "https://www.tweedekamer.nl/"
+    category: "government_actor"
+    name: "Tweede Kamer officieel"

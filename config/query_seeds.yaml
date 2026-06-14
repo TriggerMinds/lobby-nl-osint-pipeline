@@ -1,0 +1,151 @@
+# Lobby NL OSINT Pipeline — Query Seeds Configuration
+# Nederlandse en Engelse zoektermen voor 8 hoofdcategorieën + media + politiek
+
+query_seeds:
+  # HOOFDCATEGORIE 1: Pro-Israël organisaties
+  pro_israel:
+    nl:
+      - '"CIDI Nederland" politiek'
+      - '"pro-Israël organisatie" Nederland'
+      - '"pro Israel organisatie" Nederland'
+      - '"Israël lobby" Nederland Tweede Kamer'
+      - '"Israel lobby" Nederland Tweede Kamer'
+      - '"Israël advocacy" Nederland organisatie'
+      - 'zionisme Nederland organisatie lobby'
+    en:
+      - '"CIDI Netherlands" politics'
+      - '"pro Israel organization" Netherlands'
+      - '"Israel lobby" Netherlands parliament'
+      - '"Netherlands Israel lobby" organization'
+      - '"Dutch Israel advocacy" group'
+      - '"Zionist organization" Netherlands'
+
+  # HOOFDCATEGORIE 2: Christenzionistische organisaties
+  christian_zionist:
+    nl:
+      - '"Christenen voor Israël" politiek'
+      - '"Christenen voor Israël" Tweede Kamer'
+      - 'christenzionisme Nederland organisatie'
+      - '"christelijk zionisme" Nederland'
+      - '"christian zionism" Nederland organisatie'
+      - '"bijbels zionisme" Nederland'
+    en:
+      - '"Christians for Israel" Netherlands'
+      - '"Christian Zionism" Netherlands organization'
+      - '"Christian Zionist" Dutch politics'
+      - '"Biblical Zionism" Netherlands'
+
+  # HOOFDCATEGORIE 3: Joodse maatschappelijke organisaties
+  jewish_civic:
+    nl:
+      - '"Centraal Joods Overleg" Nederland'
+      - 'CJO Nederland media politiek'
+      - '"NIK Nederland" organisatie'
+      - '"Joodse gemeenschap" Nederland politiek'
+      - '"Joods maatschappelijk" overleg organisatie'
+      - 'PIK Nederland Joodse organisatie'
+    en:
+      - '"Central Jewish Consultation" Netherlands'
+      - '"Jewish community" Netherlands politics'
+      - '"Dutch Jewish" organization lobby'
+
+  # HOOFDCATEGORIE 4: Israëlische diplomatieke kanalen
+  israeli_diplomatic:
+    nl:
+      - '"Israëlische ambassade" Nederland samenwerking'
+      - '"ambassade van Israël" Den Haag event'
+      - '"Israëlische diplomatieke" Nederland'
+      - '"Israel embassy" The Hague Netherlands'
+    en:
+      - '"Israeli embassy" Netherlands cooperation'
+      - '"Israel diplomatic" Netherlands relations'
+      - '"Israel embassy The Hague" event'
+
+  # HOOFDCATEGORIE 5: Antisemitismebestrijding
+  antisemitism_policy:
+    nl:
+      - '"nationaal coördinator antisemitisme"'
+      - 'NIDA antisemitisme Nederland rapport'
+      - '"meldpunt antisemitisme" Nederland'
+      - '"antisemitisme bestrijding" Nederland beleid'
+      - '"NCAB" Nederland antisemitisme'
+    en:
+      - '"National Coordinator Antisemitism" Netherlands'
+      - '"antisemitism policy" Netherlands'
+      - '"antisemitism coordinator" Dutch government'
+
+  # HOOFDCATEGORIE 6: Parlementaire netwerken
+  parliamentary:
+    nl:
+      - '"Tweede Kamer" Israël motie'
+      - '"Tweede Kamer" Gaza debat'
+      - '"Tweede Kamer" Hamas vragen'
+      - '"Tweede Kamer" BDS motie'
+      - '"Tweede Kamer" antisemitisme debat'
+      - '"Eerste Kamer" Israël Palestina'
+      - '"Tweede Kamer" wapenexport Israël'
+      - '"Tweede Kamer" UNRWA'
+      - '"parlementaire vragen" Israël lobby'
+      - 'Israel Allies Foundation Nederland Kamerlid'
+    en:
+      - '"Dutch Parliament" Israel motion'
+      - '"Dutch Parliament" Gaza debate'
+      - '"Tweede Kamer" Israel Palestine'
+      - '"Dutch MPs" Israel lobby'
+      - '"Israel Allies Foundation" Netherlands'
+
+  # HOOFDCATEGORIE 7: Tegenlobby Palestina-rechten
+  palestine_rights:
+    nl:
+      - '"Palestina Komitee" Nederland'
+      - 'BDS Nederland Israël campagne'
+      - '"Palestijnse rechten" Nederland organisatie'
+      - '"The Rights Forum" Nederland'
+      - '"stop de bezetting" Nederland organisatie'
+      - '"Palestina solidariteit" Nederland'
+      - 'DOCP Nederland Palestina'
+    en:
+      - '"Palestine Committee" Netherlands'
+      - '"BDS Netherlands" Israel organization'
+      - '"Palestinian rights" Netherlands lobby'
+      - '"The Rights Forum" Netherlands'
+      - '"Palestine solidarity" Netherlands'
+
+  # HOOFDCATEGORIE 8: EU Register
+  eu_register:
+    nl:
+      - 'EU-transparantieregister Israël Nederland'
+      - 'EU lobbyregister Israël organisatie'
+      - 'EU-transparantieregister antisemitisme'
+      - 'EU lobbyregister Midden-Oosten Nederland'
+    en:
+      - '"EU Transparency Register" Israel Netherlands'
+      - '"EU lobby register" Middle East Netherlands'
+      - '"EU Transparency" antisemitism Netherlands'
+
+  # MEDIA
+  media:
+    nl:
+      - 'NOS Israël Palestina conflict'
+      - 'Volkskrant Israël lobby'
+      - 'NRC Israël invloed Nederland'
+      - 'Telegraaf antisemitisme Nederland'
+      - 'Trouw Midden-Oosten politiek'
+      - 'AD Israël Gaza Nederland'
+
+  # ALTERNATIEVE MEDIA
+  alternative_media:
+    nl:
+      - '"De Correspondent" Israël lobby'
+      - '"Follow the Money" Israël financiering'
+      - 'Joop Israël Palestina opinie'
+
+  # FINANCIERING & LOBBY
+  finance:
+    nl:
+      - 'stichting Israël donatie Nederland'
+      - 'fonds Israël Nederland ANBI'
+      - 'Israël fundraising Nederland organisatie'
+      - 'lobbykantoor Israël Den Haag'
+      - 'public affairs Israël Nederland'
+      - 'advocatenkantoor Israël zaken Nederland'

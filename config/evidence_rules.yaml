@@ -1,0 +1,147 @@
+# Lobby NL OSINT Pipeline — Evidence Rules Configuration
+# Definieert bewijstypes, sterkte-niveaus, opacity mechanisms, en validatieregels
+
+evidence_types:
+  legal_evidence:
+    label: "Juridisch bewijs"
+    description: "Rechterlijke uitspraken, wetsteksten, juridische documenten"
+  documentary_evidence:
+    label: "Documentair bewijs"
+    description: "Jaarverslagen, beleidsdocumenten, officiële publicaties"
+  registry_evidence:
+    label: "Register bewijs"
+    description: "Lobbyregisters, handelsregisters, transparantieregisters"
+  parliamentary_evidence:
+    label: "Parlementair bewijs"
+    description: "Kamerstukken, moties, debatverslagen, Kamervragen"
+  osint_evidence:
+    label: "OSINT bewijs"
+    description: "Open source intelligence, publiek beschikbare informatie"
+  behavioral_pattern_evidence:
+    label: "Gedragspatroon bewijs"
+    description: "Herhaalde gedragspatronen die op activiteit wijzen"
+  network_evidence:
+    label: "Netwerk bewijs"
+    description: "Aantoonbare netwerkverbindingen tussen actoren"
+  financial_trace_evidence:
+    label: "Financieel spoor bewijs"
+    description: "Financiële transacties, donaties, subsidies"
+  institutional_interaction_evidence:
+    label: "Institutioneel interactie bewijs"
+    description: "Aantoonbare interacties met overheidsinstellingen"
+  media_framing_evidence:
+    label: "Media framing bewijs"
+    description: "Herhaalde framing patronen in media-uitingen"
+  event_evidence:
+    label: "Event bewijs"
+    description: "Deelname aan, organisatie van, of aanwezigheid bij evenementen"
+  archival_evidence:
+    label: "Archief bewijs"
+    description: "Gearchiveerde bronnen, Internet Archive, webarchieven"
+  weak_associative_evidence:
+    label: "Zwak associatief bewijs"
+    description: "Zwakke associaties die niet als feit mogen worden gepresenteerd"
+
+evidence_strength:
+  hard:
+    label: "Hard bewijs"
+    description: "Onafhankelijk geverifieerd, meerdere bronnen, geen tegenspraak"
+  strong:
+    label: "Sterk bewijs"
+    description: "Goed gedocumenteerd, primaire bron, minimale onzekerheid"
+  medium:
+    label: "Gemiddeld bewijs"
+    description: "Redelijk gedocumenteerd, enige onzekerheid toegestaan"
+  light:
+    label: "Licht bewijs"
+    description: "Beperkte documentatie, behoud label"
+  weak:
+    label: "Zwak bewijs"
+    description: "Fragmentarisch, indirect, of single-source — niet upgraden"
+
+opacity_mechanisms:
+  hard_to_trace_funding:
+    label: "Moeilijk traceerbare financiering"
+  intermediary_structures:
+    label: "Intermediaire structuren"
+  cross_border_offshore:
+    label: "Grensoverschrijdende/offshore structuren"
+  link_rot:
+    label: "Link rot"
+  source_removal:
+    label: "Bron verwijderd"
+  archive_disappearance:
+    label: "Archief verdwenen"
+  stale_documents:
+    label: "Verouderde documenten"
+  document_ageing:
+    label: "Document veroudering"
+  legal_complexity_delay:
+    label: "Juridische complexiteit als vertraging"
+  reputational_pressure:
+    label: "Reputatiedruk op onderzoekers"
+  delegitimization_patterns:
+    label: "Delegitimatie patronen"
+  conflicting_information:
+    label: "Tegenstrijdige informatie"
+  source_contradiction:
+    label: "Bron tegenspraak"
+  disinformation_indicators:
+    label: "Desinformatie indicatoren"
+  media_framing_asymmetry:
+    label: "Media framing asymmetrie"
+  institutional_non_response:
+    label: "Institutioneel niet-reageren"
+  partial_disclosure:
+    label: "Gedeeltelijke openbaarmaking"
+
+validation_rules:
+  identity_inference_guard:
+    description: "Nooit classificeren op basis van religie, etniciteit, achternaam, of afkomst"
+    applies_to: ["actor"]
+  overclaim_guard:
+    description: "Zwak bewijs niet als feit presenteren"
+    applies_to: ["claim"]
+  omission_guard:
+    description: "Politiek gevoelige actoren niet weglaten"
+    applies_to: ["actor", "relationship"]
+  duplicate_guard:
+    description: "Duplicaat actoren detecteren en samenvoegen"
+    applies_to: ["actor"]
+  source_validator:
+    description: "Elke bron moet access_date en content_hash hebben"
+    applies_to: ["source"]
+  relationship_validator:
+    description: "Elke relatie moet minstens één source_id hebben"
+    applies_to: ["relationship"]
+  category_validator:
+    description: "Categorieën mogen niet uit identiteit worden afgeleid"
+    applies_to: ["actor"]
+  export_validator:
+    description: "Alle referenties moeten valide zijn voor export"
+    applies_to: ["actor", "claim", "relationship"]
+
+quality_gates:
+  - "Elke actor: minstens één source_id"
+  - "Elke claim: source_id verplicht"
+  - "Elke relatie: source_ids verplicht"
+  - "Elke bron: access_date verplicht, content_hash aanbevolen"
+  - "Geen persoon opgenomen alleen op identiteit"
+  - "Geen organisatie geclassificeerd alleen op identiteit"
+  - "Joodse maatschappelijke actoren: NIET auto-classificeren als pro-Israël/lobby"
+  - "Antisemitismebestrijding: NIET auto-classificeren als Zionist"
+  - "Christenzionistische actoren: apart houden"
+  - "Diplomatieke actoren: apart houden als state/diplomatic"
+  - "Tegenlobby actoren: verplicht opnemen"
+  - "Lichte/zwakke signalen: behouden en labelen"
+  - "Missingness: loggen als DataGap met alternatieve verklaring"
+  - "Archief checks: waar mogelijk uitvoeren"
+  - "Verwijderde/dode bronnen: loggen in source_disappearance_log.csv"
+
+structural_limitations_nl:
+  - "Geen algemeen verplicht lobbyregister in Nederland"
+  - "Parlementair lobbyregister = alleen toegangspas-bewijs, niet volledige lobbyactiviteit"
+  - "Ministeriële agenda's zijn indicatief, kunnen onvolledig zijn"
+  - "Woo-documenten kunnen vertraagd, geweigerd, gelakt of gefragmenteerd zijn"
+  - "Invloed via zowel formele als informele kanalen"
+  - "Relevante publieke data verspreid over websites, Kamerstukken, PDFs, media, events, archieven"

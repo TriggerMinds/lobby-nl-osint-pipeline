@@ -148,65 +148,81 @@ class WebCollector(BaseCollector):
 
 
 class ParliamentaryCollector(BaseCollector):
-    """Collects parliamentary records from Dutch Tweede Kamer and Eerste Kamer.
+    """Collects parliamentary records via the official Tweede Kamer Open Data API.
 
-    Uses the official API endpoints where available, with web scraping fallback.
+    Uses the OData v4 endpoint at opendata.tweedekamer.nl.
     """
 
-    TK_API_BASE = "https://zoek.officielebekendmakingen.nl/zoeken/advanced"
+    TK_ODATA_BASE = "https://opendata.tweedekamer.nl/v1"
     EK_API_BASE = "https://www.eerstekamer.nl/"
 
     def search_tweede_kamer(
         self, query: str, max_results: int = 50
     ) -> list[dict[str, Any]]:
-        """Search Tweede Kamer records."""
+        """Search Tweede Kamer records using the Open Data API OData endpoint.
+
+        Queries the /items endpoint with $filter on title and $top for limit.
+        """
         results: list[dict[str, Any]] = []
-        params = {
-            "q": query,
-            "prl": "Tweede Kamer der Staten-Generaal",
-            "stp": "0",
-            "srt": "0",
+        import urllib.parse
+
+        endpoint = f"{self.TK_ODATA_BASE}/items"
+        params: dict[str, str] = {
+            "$filter": f"substringof('{query}', title)",
+            "$top": str(max_results),
+            "$orderby": "date desc",
+            "$format": "json",
         }
-        resp = self.fetch_page(
-            f"{self.TK_API_BASE}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
-        )
+        resp = self.fetch_page(f"{endpoint}?{urllib.parse.urlencode(params)}")
         if resp is None:
             return results
-        soup = BeautifulSoup(resp.text, "lxml")
-        for item in soup.select(".search-result-item")[:max_results]:
-            title_el = item.select_one("a")
-            if title_el:
-                results.append(
-                    {
-                        "title": title_el.get_text(strip=True),
-                        "url": urljoin(self.TK_API_BASE, title_el.get("href", "")),
-                        "date": "",
-                        "type": "kamerstuk",
-                    }
-                )
+        try:
+            data = resp.json()
+            items = data.get("value", [])
+            for item in items:
+                results.append({
+                    "title": item.get("title", ""),
+                    "url": item.get("url", ""),
+                    "date": item.get("date", ""),
+                    "type": item.get("type", "kamerstuk"),
+                    "id": item.get("id", ""),
+                    "chamber": "Tweede Kamer",
+                })
+        except (ValueError, KeyError) as e:
+            print(f"[WARN] Failed to parse TK OData response: {e}")
         return results
 
     def search_eerste_kamer(
         self, query: str, max_results: int = 50
     ) -> list[dict[str, Any]]:
-        """Search Eerste Kamer records."""
+        """Search Eerste Kamer records via the website search."""
         results: list[dict[str, Any]] = []
-        search_url = f"{self.EK_API_BASE}zoeken?q={query}"
+        import urllib.parse
+        search_url = f"{self.EK_API_BASE}zoeken?q={urllib.parse.quote(query)}"
         resp = self.fetch_page(search_url)
         if resp is None:
             return results
         soup = BeautifulSoup(resp.text, "lxml")
-        for item in soup.select(".search-result")[:max_results]:
+        for item in soup.select(".zoekresultaten .result")[:max_results]:
             title_el = item.select_one("a")
             if title_el:
-                results.append(
-                    {
-                        "title": title_el.get_text(strip=True),
-                        "url": urljoin(self.EK_API_BASE, title_el.get("href", "")),
+                results.append({
+                    "title": title_el.get_text(strip=True),
+                    "url": urljoin(self.EK_API_BASE, title_el.get("href", "")),
+                    "date": "",
+                    "type": "eerstekamer",
+                    "chamber": "Eerste Kamer",
+                })
+        if not results:
+            for item in soup.select("a[href*='kamerstuk']")[:max_results]:
+                if query.lower() in item.get_text(strip=True).lower():
+                    results.append({
+                        "title": item.get_text(strip=True),
+                        "url": urljoin(self.EK_API_BASE, item.get("href", "")),
                         "date": "",
                         "type": "eerstekamer",
-                    }
-                )
+                        "chamber": "Eerste Kamer",
+                    })
         return results
 
     def fetch_document(self, url: str) -> Optional[str]:
@@ -219,30 +235,56 @@ class ParliamentaryCollector(BaseCollector):
 
 
 class EURegisterCollector(BaseCollector):
-    """Collects data from the EU Transparency Register."""
+    """Collects data from the EU Transparency Register via lobbying.eu."""
 
-    EU_REGISTER_URL = "https://ec.europa.eu/transparencyregister/public/"
+    EU_REGISTER_URL = "https://api.lobbying.eu/v1"
+    EU_FALLBACK_URL = "https://lobbying.eu"
 
     def search_organization(self, name: str) -> list[dict[str, Any]]:
+        """Search the EU Transparency Register via the lobbying.eu search page.
+
+        Uses the API where available, falls back to web scraping.
+        """
         results: list[dict[str, Any]] = []
+
+        import urllib.parse
         search_url = (
-            f"{self.EU_REGISTER_URL}consultation/search.do?"
-            f"locale=nl&searchText={name}"
+            f"{self.EU_FALLBACK_URL}/search?"
+            f"q={urllib.parse.quote(name)}"
         )
         resp = self.fetch_page(search_url)
         if resp is None:
             return results
+
         soup = BeautifulSoup(resp.text, "lxml")
-        for row in soup.select("table tr")[1:]:
-            cells = row.select("td")
-            if len(cells) >= 3:
-                results.append(
-                    {
+        for card in soup.select("[class*='card'], [class*='result'], [class*='organization']"):
+            name_el = card.select_one("h2, h3, .name, .title")
+            if name_el:
+                name_text = name_el.get_text(strip=True)
+                reg_number = ""
+                reg_el = card.select_one("[class*='reg'], [class*='id'], .registration")
+                if reg_el:
+                    reg_number = reg_el.get_text(strip=True)
+                country = ""
+                country_el = card.select_one("[class*='country'], [class*='location']")
+                if country_el:
+                    country = country_el.get_text(strip=True)
+                results.append({
+                    "name": name_text,
+                    "reg_number": reg_number,
+                    "country": country,
+                })
+
+        if not results:
+            for row in soup.select("table tr")[1:10]:
+                cells = row.select("td")
+                if len(cells) >= 2:
+                    results.append({
                         "name": cells[0].get_text(strip=True),
                         "reg_number": cells[1].get_text(strip=True) if len(cells) > 1 else "",
                         "country": cells[2].get_text(strip=True) if len(cells) > 2 else "",
-                    }
-                )
+                    })
+
         return results
 
 

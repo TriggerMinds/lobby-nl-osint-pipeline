@@ -1,0 +1,223 @@
+# Lobby NL OSINT Pipeline — Actor Categories Configuration
+# 50 categorieën zoals gedefinieerd in de ActorCategory enum
+
+categories:
+  # === HOOFDCATEGORIEËN (8) ===
+  pro_israel_org:
+    label: "Pro-Israël organisatie"
+    description: "Organisaties die Israël-advocacy bedrijven in Nederland"
+    misclassification_risk: null
+
+  christian_zionist_org:
+    label: "Christenzionistische organisatie"
+    description: "Christelijk-zionistische organisaties (apart van joodse en pro-Israël)"
+    misclassification_risk: null
+
+  jewish_civic_org:
+    label: "Joodse maatschappelijke organisatie"
+    description: "Joodse maatschappelijke/culturele/religieuze organisaties"
+    misclassification_risk: "HIGH — niet automatisch als pro-Israël lobby classificeren"
+
+  israeli_diplomatic_channel:
+    label: "Israëlisch diplomatiek kanaal"
+    description: "Israëlische ambassade, consulaten, officiële staatskanalen"
+    classification: "state/diplomatic — niet NGO lobby"
+
+  antisemitism_policy_infrastructure:
+    label: "Antisemitismebestrijding infrastructuur"
+    description: "Overheids- en semi-overheidsorganen voor antisemitisme bestrijding"
+    misclassification_risk: "HIGH — niet automatisch als Zionist classificeren"
+
+  parliamentary_actor:
+    label: "Parlementaire actor"
+    description: "Kamerleden, commissieleden, parlementaire netwerken"
+
+  palestine_rights_counter_lobby:
+    label: "Tegenlobby Palestina-rechten"
+    description: "Organisaties die Palestijnse rechten verdedigen / tegenlobby voeren"
+    purpose: "comparatieve power mapping"
+
+  eu_register_actor:
+    label: "EU Register actor"
+    description: "EU Transparantieregister ingeschreven actor met NL-relevantie"
+
+  # === MEDIA & JOURNALISTEN (11) ===
+  media_actor:
+    label: "Media organisatie"
+    description: "Traditionele nieuwsmedia (kranten, tv, radio)"
+    misclassification_risk: "NIET automatisch als advocacy classificeren"
+
+  alternative_media_actor:
+    label: "Alternatieve media"
+    description: "Alternatieve/onafhankelijke nieuwsmedia"
+
+  journalist_actor:
+    label: "Journalist / columnist"
+    description: "Individuele journalisten, columnisten, redacteuren"
+
+  presenter_actor:
+    label: "Presentator"
+    description: "Presentatoren van talkshows, programma's"
+
+  talkshow_or_program_actor:
+    label: "Talkshow / programma"
+    description: "Talkshows, tv-programma's, radio-uitzendingen"
+
+  podcast_actor:
+    label: "Podcast"
+    description: "Podcast hosts en shows"
+
+  newsletter_actor:
+    label: "Nieuwsbrief auteur"
+    description: "Nieuwsbrief-auteurs en -uitgevers"
+
+  newsletter_author_actor:
+    label: "Nieuwsbrief auteur (alias)"
+    description: "Alias voor newsletter_actor"
+
+  influencer_actor:
+    label: "Influencer / social media"
+    description: "Digitale beïnvloeders met publiek bereik"
+
+  opining_activist_actor:
+    label: "Opiniemaker / activist"
+    description: "Publieke opiniemakers en activisten"
+
+  public_broadcaster_actor:
+    label: "Publieke omroep"
+    description: "NPO, regionale omroepen, publieke media-instellingen"
+
+  media_framing_actor:
+    label: "Media framing actor"
+    description: "Actoren geïdentificeerd via media framing analyse"
+
+  # === POLITIEK & OVERHEID (11) ===
+  party_actor:
+    label: "Politieke partij"
+
+  senate_actor:
+    label: "Eerste Kamerlid"
+
+  house_actor:
+    label: "Tweede Kamerlid"
+
+  committee_actor:
+    label: "Kamercommissie"
+
+  ministry_actor:
+    label: "Ministerie"
+
+  government_actor:
+    label: "Overheidsinstelling"
+
+  department_actor:
+    label: "Departement / directie"
+
+  implementation_org_actor:
+    label: "Uitvoeringsorganisatie"
+
+  municipal_actor:
+    label: "Gemeentelijke actor"
+
+  mayor_actor:
+    label: "Burgemeester"
+
+  police_actor:
+    label: "Politie actor"
+
+  security_actor:
+    label: "Veiligheidsactor"
+
+  nctv_actor:
+    label: "NCTV / veiligheidsnetwerk"
+
+  semi_government_actor:
+    label: "Semi-publieke instelling"
+
+  # === PUBLIEKE FIGUREN & EXPERTS (8) ===
+  celebrity_actor:
+    label: "Bekende Nederlander / publiek figuur"
+
+  academic_actor:
+    label: "Academicus / universiteit"
+
+  think_tank_actor:
+    label: "Denktank"
+
+  speaker_event_actor:
+    label: "Spreker / congresdeelnemer"
+
+  research_actor:
+    label: "Onderzoeker"
+
+  researcher_actor:
+    label: "Onderzoeker (alias)"
+
+  consultant_advisor_actor:
+    label: "Consultant / adviseur"
+
+  expert_media_guest_actor:
+    label: "Expert / media gast"
+
+  diaspora_actor:
+    label: "Diaspora organisatie"
+
+  # === FINANCIERING & LOBBY (8) ===
+  funding_actor:
+    label: "Fonds / financier"
+
+  donor_actor:
+    label: "Donor"
+
+  sponsor_actor:
+    label: "Sponsor"
+
+  grantmaker_actor:
+    label: "Grantmaker / subsidieverstrekker"
+
+  foundation_actor:
+    label: "Stichting"
+
+  pr_or_consultancy_actor:
+    label: "PR / lobby / consultancy"
+
+  lobbying_firm_actor:
+    label: "Lobbykantoor"
+
+  pr_firm_actor:
+    label: "PR-bureau"
+
+  law_firm_actor:
+    label: "Advocatenkantoor"
+
+  # === EVENTS & PLATFORMS (4) ===
+  event_platform_actor:
+    label: "Event platform"
+
+  event_organizer_actor:
+    label: "Event organisator"
+
+  venue_actor:
+    label: "Locatie / venue"
+
+  platform_actor:
+    label: "Platform"
+
+  # === OVERIG (6) ===
+  campaign_actor:
+    label: "Campagne"
+
+  religious_actor:
+    label: "Religieuze actor"
+
+  education_actor:
+    label: "Onderwijsinstelling"
+
+  archive_actor:
+    label: "Archief / bronbehoud"
+
+  social_platform_actor:
+    label: "Social media platform"
+
+  unknown:
+    label: "Onbekend / onopgelost"
