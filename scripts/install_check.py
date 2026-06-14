@@ -28,7 +28,7 @@ PACKAGES = {
     "requests": "requests",
     "bs4": "beautifulsoup4",
     "playwright": "playwright",
-    "readability_lxml": "readability-lxml",
+    "readability": "readability-lxml",
     "waybackpy": "waybackpy",
     "yaml": "pyyaml",
     "networkx": "networkx",
@@ -60,15 +60,17 @@ def check_imports() -> dict[str, bool]:
     return results
 
 
-def check_playwright_browsers() -> bool:
+def check_playwright_chromium() -> bool:
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "playwright", "install", "--dry-run", "chromium"],
-            capture_output=True, text=True
+            [sys.executable, "-c",
+             "from playwright.sync_api import sync_playwright; "
+             "p = sync_playwright().start(); "
+             "b = p.chromium.launch(headless=True); "
+             "b.close(); p.stop(); print('OK')"],
+            capture_output=True, text=True, timeout=30
         )
-        if "chromium" in result.stdout.lower() and "already installed" not in result.stdout.lower():
-            return False
-        return True
+        return result.returncode == 0 and "OK" in result.stdout
     except Exception:
         return False
 
@@ -94,16 +96,8 @@ def check_lxml() -> tuple[bool, str | None]:
 
 
 def check_crawl4ai_setup() -> bool:
-    if not shutil.which("crawl4ai-setup"):
-        return False
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "crawl4ai"],
-            capture_output=True, text=True
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
+    db_path = Path.home() / ".crawl4ai" / "crawl4ai.db"
+    return db_path.exists()
 
 
 def main() -> int:
@@ -121,7 +115,7 @@ def main() -> int:
     print()
 
     if results["playwright"]:
-        if check_playwright_browsers():
+        if check_playwright_chromium():
             print("  [     OK] playwright chromium browser")
         else:
             print("  [MISSING] playwright chromium browser")
