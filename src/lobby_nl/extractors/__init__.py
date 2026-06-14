@@ -159,10 +159,13 @@ class RelationshipExtractor:
     def extract_relationships(
         self, text: str, actors: list[Actor]
     ) -> list[dict[str, Any]]:
-        """Extract potential relationships from text given known actors."""
+        """Extract relationships: pattern-based AND co-occurrence from page-level text."""
         relationships: list[dict[str, Any]] = []
         text_lower = text.lower()
         actor_names = {a.name.lower(): a.actor_id for a in actors}
+        seen_pairs: set[tuple[str, str]] = set()
+
+        # --- Pattern-based: explicit relationship verbs ---
         for pattern, rel_type in self.RELATIONSHIP_PATTERNS:
             for match in re.finditer(pattern, text_lower):
                 context_start = max(0, match.start() - 200)
@@ -174,15 +177,37 @@ class RelationshipExtractor:
                     if name in context
                 ]
                 if len(found_actors) >= 2:
-                    relationships.append(
-                        {
-                            "actor_a_id": found_actors[0],
-                            "actor_b_id": found_actors[1],
-                            "relationship_type": rel_type,
-                            "evidence_strength": EvidenceStrength.light,
-                            "context_excerpt": context[:300],
-                        }
-                    )
+                    pair = (found_actors[0], found_actors[1])
+                    seen_pairs.add(pair)
+                    relationships.append({
+                        "actor_a_id": found_actors[0],
+                        "actor_b_id": found_actors[1],
+                        "relationship_type": rel_type,
+                        "evidence_strength": EvidenceStrength.light,
+                        "context_excerpt": context[:300],
+                    })
+
+        # --- Co-occurrence: any two actors on the same page ---
+        actors_on_page = [
+            (actor_id, name) for name, actor_id in actor_names.items()
+            if name in text_lower
+        ]
+        unique_actors = list(dict(actors_on_page).items())
+        for i in range(len(unique_actors)):
+            for j in range(i + 1, len(unique_actors)):
+                a_id, a_name = unique_actors[i]
+                b_id, b_name = unique_actors[j]
+                pair = (a_id, b_id)
+                if pair not in seen_pairs:
+                    seen_pairs.add(pair)
+                    relationships.append({
+                        "actor_a_id": a_id,
+                        "actor_b_id": b_id,
+                        "relationship_type": RelationshipType.co_occurrence,
+                        "evidence_strength": EvidenceStrength.weak,
+                        "context_excerpt": f"Co-occurrence on page: {a_name.title()} and {b_name.title()}",
+                    })
+
         return relationships
 
 

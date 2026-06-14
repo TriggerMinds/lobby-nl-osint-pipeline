@@ -155,6 +155,8 @@ class RelationshipType(str, Enum):
     social_media_relation = "social_media_relation"
     funding_relation = "funding_relation"
     event_relation = "event_relation"
+    co_occurrence = "co_occurrence"
+    mentioned_by = "mentioned_by"
     unknown = "unknown"
 
 
@@ -179,6 +181,7 @@ class OpacityMechanism(str, Enum):
     robots_txt_block = "robots_txt_block"
     access_restricted = "access_restricted"
     blocking_403 = "blocking_403"
+    wayback_only = "wayback_only"
 
 
 class InclusionType(str, Enum):
