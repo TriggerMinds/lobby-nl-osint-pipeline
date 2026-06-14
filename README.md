@@ -160,6 +160,55 @@ ruff check src/ tests/
 mypy src/
 ```
 
+## External Tool Ecosystem
+
+The pipeline integrates with five external tools for enriched analysis. See `docs/external_tools/` for detailed workflows.
+
+| Tool | Purpose | Docs |
+|---|---|---|
+| **Crawl4AI** | JS-heavy page crawling, markdown extraction | `src/lobby_nl/collectors/crawl4ai_collector.py` |
+| **GPT Researcher** | AI-powered actor research and seed discovery | `docs/external_tools/gpt_researcher_workflow.md` |
+| **OpenRefine** | Actor name deduplication, Wikidata reconciliation | `docs/external_tools/openrefine_workflow.md` |
+| **Gephi** | Network visualization, ForceAtlas2 layout, community detection | `docs/external_tools/gephi_workflow.md` |
+| **Neo4j GDS** | PageRank, Louvain, betweenness centrality, shortest path analysis | `docs/external_tools/neo4j_gds_queries.cypher` |
+
+### Crawl4AI
+
+```bash
+pip install crawl4ai
+# The Crawl4AICollector in src/lobby_nl/collectors/crawl4ai_collector.py
+# automatically detects crawl4ai and falls back to WebCollector if not installed.
+```
+
+### GPT Researcher
+
+```bash
+pip install gpt-researcher
+gpt-researcher --query "CIDI Nederland lobby" --output data/input/research.json
+# See docs/external_tools/gpt_researcher_workflow.md for conversion to manual_seeds.csv
+```
+
+### OpenRefine
+
+```bash
+# Import openrefine_actors.csv for deduplication and Wikidata reconciliation
+# See docs/external_tools/openrefine_workflow.md for step-by-step instructions
+```
+
+### Gephi
+
+```bash
+# Import gephi_nodes.csv + gephi_edges.csv
+# See docs/external_tools/gephi_workflow.md for layout, coloring, and community detection
+```
+
+### Neo4j Graph Data Science
+
+```bash
+# Import neo4j_import.cypher first, then run GDS queries
+# See docs/external_tools/neo4j_gds_queries.cypher for PageRank, Louvain, betweenness
+```
+
 ## License
 
 MIT
