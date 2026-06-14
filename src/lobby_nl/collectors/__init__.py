@@ -18,9 +18,23 @@ from typing import Any, Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+import warnings
 
 from lobby_nl.models import OpacityMechanism, OpacitySignal, Source
+
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+
+
+def parse_html_or_xml(content: str, url: str = "") -> BeautifulSoup:
+    is_xml = (
+        url.endswith((".xml", ".rss", ".atom"))
+        or content.strip().startswith("<?xml")
+        or "<urlset" in content[:500]
+        or "<rss" in content[:500]
+        or "<feed" in content[:500]
+    )
+    return BeautifulSoup(content, "xml" if is_xml else "lxml")
 
 
 def _get_random_user_agent() -> str:
@@ -153,7 +167,7 @@ class BaseCollector:
         return None
 
     def extract_html_content(self, html: str, url: str) -> tuple[str, str]:
-        soup = BeautifulSoup(html, "lxml")
+        soup = parse_html_or_xml(html, url=url)
         title = ""
         if soup.title and soup.title.string:
             title = soup.title.string.strip()
@@ -407,7 +421,7 @@ class WebCollector(BaseCollector):
             sources.append(src)
             self._save_raw(url, resp.text)
             if depth < max_depth:
-                soup = BeautifulSoup(resp.text, "lxml")
+                soup = parse_html_or_xml(resp.text, url=url)
                 for a_tag in soup.find_all("a", href=True):
                     href = a_tag["href"]
                     full_url = urljoin(url, href)
@@ -455,7 +469,7 @@ class ParliamentaryCollector(BaseCollector):
         search_url = f"{self.TK_SEARCH_URL}?{urllib.parse.urlencode(params)}"
         resp = self.fetch_page(search_url)
         if resp is not None:
-            soup = BeautifulSoup(resp.text, "lxml")
+            soup = parse_html_or_xml(resp.text, url=resp.url)
             for item in soup.select(
                 "[class*='result'], [class*='search-result'], .result-item, article, li"
             )[:max_results]:
@@ -513,7 +527,7 @@ class ParliamentaryCollector(BaseCollector):
         resp = self.fetch_page(search_url)
         if resp is None:
             return results
-        soup = BeautifulSoup(resp.text, "lxml")
+        soup = parse_html_or_xml(resp.text, url=resp.url)
         for item in soup.select(".zoekresultaten .result")[:max_results]:
             title_el = item.select_one("a")
             if title_el:
@@ -570,7 +584,7 @@ class EURegisterCollector(BaseCollector):
         if resp is None:
             return results
 
-        soup = BeautifulSoup(resp.text, "lxml")
+        soup = parse_html_or_xml(resp.text, url=resp.url)
         for card in soup.select("[class*='card'], [class*='result'], [class*='organization']"):
             name_el = card.select_one("h2, h3, .name, .title")
             if name_el:
