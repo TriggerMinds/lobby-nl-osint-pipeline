@@ -1,0 +1,24 @@
+============================================================
+Seed Validation Report — manual_seeds.csv
+============================================================
+Total seeds: 85
+Errors: 0
+Warnings: 0
+
+----------------------------------------
+Per Category Summary
+----------------------------------------
+  academic_actor: 4 seeds
+  alternative_media_actor: 5 seeds
+  antisemitism_policy_infrastructure: 6 seeds
+  christian_zionist_org: 6 seeds
+  eu_register_actor: 3 seeds
+  government_actor: 4 seeds
+  israeli_diplomatic_channel: 4 seeds
+  jewish_civic_org: 8 seeds
+  media_actor: 8 seeds
+  ministry_actor: 6 seeds
+  palestine_rights_counter_lobby: 8 seeds
+  party_actor: 10 seeds
+  pro_israel_org: 8 seeds
+  talkshow_or_program_actor: 5 seeds

@@ -24,6 +24,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 # Enums
 # ---------------------------------------------------------------------------
 
+# NOTE: When adding a value here, also add it to ALLOWED_CATEGORIES in
+# scripts/validate_seeds.py and to category rules in classifiers/__init__.py.
 class ActorCategory(str, Enum):
     pro_israel_org = "pro_israel_org"
     christian_zionist_org = "christian_zionist_org"

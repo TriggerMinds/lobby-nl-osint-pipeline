@@ -144,6 +144,57 @@ lobby-nl analyze exports/classified_data.json
 - Influence through formal and informal channels
 - Public data split across websites, PDFs, media, events, archives
 
+## Eerste run — stap voor stap (Windows)
+
+1. **Run het installatiescript** (batch of PowerShell)
+   ```batch
+   scripts\install_all.bat
+   ```
+   Of via PowerShell:
+   ```powershell
+   .\scripts\install_all.ps1
+   ```
+   Dit installeert alle Python packages, Chromium voor Playwright, en het Nederlandse spaCy model.
+
+2. **Valideer de seeds**
+   ```bash
+   python scripts/validate_seeds.py
+   ```
+   Dit controleert `data/input/manual_seeds.csv` op ontbrekende velden, ongeldige categorieen en dubbele actor_ids. Het rapport wordt opgeslagen in `data/input/seed_validation_report.txt`.
+
+3. **Run de collector**
+   ```bash
+   python -m lobby_nl.cli.main collect --config config/sources.yaml
+   ```
+
+4. **Extract actors, claims en relaties**
+   ```bash
+   python -m lobby_nl.cli.main extract
+   ```
+
+5. **Classificeer actoren**
+   ```bash
+   python -m lobby_nl.cli.main classify
+   ```
+
+6. **Exporteer resultaten**
+   ```bash
+   python -m lobby_nl.cli.main export
+   ```
+
+### Waar staat de output?
+
+Alle exports komen in `exports/csv/` waaronder:
+- `actors.csv` — alle geverifieerde actoren
+- `claims.csv` — publieke uitspraken en claims
+- `relationships.csv` — relaties tussen actoren
+- `sources.csv` — bronverwijzingen
+- En 22 gespecialiseerde categorielijsten
+
+### Openen in OpenRefine
+
+Importeer `exports/csv/openrefine_export.tsv` in OpenRefine. Zie `docs/external_tools/openrefine_workflow.md` voor stapsgewijze instructies over deduplicatie en Wikidata-reconciliation.
+
 ## Development
 
 ```bash

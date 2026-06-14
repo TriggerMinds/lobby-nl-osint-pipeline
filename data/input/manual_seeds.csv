@@ -1,1 +1,86 @@
 actor_id,name,category,description,source_id,url,notes
+cidi_nl,CIDI (Centrum Informatie en Documentatie Israël),pro_israel_org,Pro-Israël informatie- en documentatiecentrum in Nederland,SEED_MANUAL_001,https://www.cidi.nl,seed_only — verify via pipeline
+standwithus_nl,StandWithUs Nederland,pro_israel_org,Internationale pro-Israël advocacy organisatie met Nederlandse afdeling,SEED_MANUAL_002,https://www.standwithus.com,seed_only — verify via pipeline
+likoed_nederland,Likoed Nederland,pro_israel_org,Nederlandse afdeling van de Israëlische Likoed-partij,SEED_MANUAL_003,https://www.likud.nl,seed_only — verify via pipeline
+friends_of_israel_nl,Friends of Israel Nederland,pro_israel_org,Vriendenorganisatie ter ondersteuning van Israël in Nederland,SEED_MANUAL_004,https://www.friendsofisrael.nl,seed_only — verify via pipeline
+eajc_nederland,EAJC Nederland (European Association of Jewish Communities),pro_israel_org,Europees-Joodse gemeenschapsorganisatie met Nederlandse vertegenwoordiging,SEED_MANUAL_005,https://eajc.org,seed_only — verify via pipeline
+israel_en_de_media,Israël en de Media (IDEM),pro_israel_org,Nederlandse stichting die mediaberichtgeving over Israël monitort,SEED_MANUAL_006,https://www.israelendemedia.nl,seed_only — verify via pipeline
+eci_nederland,European Coalition for Israel Nederland,pro_israel_org,Christelijke pro-Israël coalitie met Nederlandse aanwezigheid,SEED_MANUAL_007,https://www.ec4i.org,seed_only — verify via pipeline
+het_palestina_dossier,Het Palestina Dossier,pro_israel_org,Pro-Israël publicatieplatform met focus op Palestijnse kwestie,SEED_MANUAL_008,https://www.palestinadosier.nl,seed_only — verify via pipeline
+christenen_voor_israel,Christenen voor Israël,christian_zionist_org,Christelijk-zionistische organisatie actief in Nederland,SEED_MANUAL_009,https://www.christenenvoorisrael.nl,seed_only — verify via pipeline
+cufi_nederland,Christians United for Israel Nederland,christian_zionist_org,Nederlandse tak van Amerikaanse christelijk-zionistische organisatie,SEED_MANUAL_010,https://cufi.org,seed_only — verify via pipeline
+israel_and_the_church,Israel and the Church,christian_zionist_org,Christelijke organisatie gericht op relatie kerk en Israël,SEED_MANUAL_011,https://israelandthechurch.org,seed_only — verify via pipeline
+stichting_cvi_media,Stichting Christenen voor Israël Media,christian_zionist_org,Media-tak van Christenen voor Israël voor contentproductie,SEED_MANUAL_012,https://www.christenenvoorisraelmedia.nl,seed_only — verify via pipeline
+bethel_church_nl,Bethel Church Nederland,christian_zionist_org,Internationale charismatische kerk met pro-Israël standpunt en Nederlandse aanwezigheid,SEED_MANUAL_013,https://www.bethel.com,seed_only — verify via pipeline
+zending_aan_israel,Zending aan Israël,christian_zionist_org,Christelijke zendingsorganisatie gericht op het Joodse volk en Israël,SEED_MANUAL_014,https://www.zendingaanisrael.nl,seed_only — verify via pipeline
+nik_nl,NIK (Nederlands Israëlitisch Kerkgenootschap),jewish_civic_org,Overkoepelend orgaan van orthodox-Joodse gemeenten in Nederland,SEED_MANUAL_015,https://www.nik.nl,seed_only — verify via pipeline
+cjo_nl,CJO (Centraal Joods Overleg),jewish_civic_org,Centraal overlegorgaan van Joodse organisaties in Nederland,SEED_MANUAL_016,https://www.centraaljoodsoverleg.nl,seed_only — verify via pipeline
+nihs_nl,NIHS (Nederlands Israëlitische Hoofdsynagoge),jewish_civic_org,Hoofdsynagoge van de Nederlands-Israëlitische gemeenschap in Amsterdam,SEED_MANUAL_017,https://nihs.nl,seed_only — verify via pipeline
+anne_frank_stichting,Anne Frank Stichting,jewish_civic_org,Stichting ter beheer van het Anne Frank Huis en educatie over antisemitisme,SEED_MANUAL_018,https://www.annefrank.org,seed_only — verify via pipeline
+joods_historisch_museum,Joods Historisch Museum,jewish_civic_org,Museum over Joodse geschiedenis cultuur en traditie in Nederland,SEED_MANUAL_019,https://jck.nl,seed_only — verify via pipeline
+herinneringscentrum_westerbork,Herinneringscentrum Kamp Westerbork,jewish_civic_org,Herinneringscentrum over Holocaust en doorgangskamp Westerbork,SEED_MANUAL_020,https://www.kampwesterbork.nl,seed_only — verify via pipeline
+ojcn_nl,OJCN (Orthodoxe Joodse Gemeenschap Nederland),jewish_civic_org,Orthodox-Joodse gemeenschapsorganisatie in Nederland,SEED_MANUAL_021,https://www.ojcn.nl,seed_only — verify via pipeline
+federatie_nzo,Federatie Nederlandse Zionistische Organisaties,jewish_civic_org,Overkoepelende federatie van zionistische organisaties in Nederland,SEED_MANUAL_022,https://www.zionistischefederatie.org,seed_only — verify via pipeline
+ambassade_israel_nl,Ambassade van Israël in Nederland,israeli_diplomatic_channel,Israëlische ambassade gevestigd in Den Haag,SEED_MANUAL_023,https://embassies.gov.il/thehague,seed_only — verify via pipeline
+israelisch_consulaat_amsterdam,Israëlisch Consulaat Amsterdam,israeli_diplomatic_channel,Israëlisch consulaat in Amsterdam,SEED_MANUAL_024,https://embassies.gov.il/amsterdam,seed_only — verify via pipeline
+israel_innovation_authority_nl,Israel Innovation Authority NL,israeli_diplomatic_channel,Israëlische overheidsinstantie voor technologische innovatie met Nederlandse contacten,SEED_MANUAL_025,https://innovationisrael.org.il,seed_only — verify via pipeline
+mashav_nederland,MASHAV Nederland,israeli_diplomatic_channel,Israëlisch agentschap voor internationale ontwikkelingssamenwerking actief in Nederland,SEED_MANUAL_026,https://www.gov.il/en/departments/mashav,seed_only — verify via pipeline
+cidi_antismonitor,CIDI Antisemitismemonitor,antisemitism_policy_infrastructure,Jaarlijkse antisemitismemonitor uitgevoerd door CIDI,SEED_MANUAL_027,https://www.cidi.nl/monitor,seed_only — verify via pipeline
+ncab_nl,Nationale Coördinator Antisemitismebestrijding (NCAB),antisemitism_policy_infrastructure,Nederlandse overheidscoördinator voor antisemitismebestrijding,SEED_MANUAL_028,https://www.rijksoverheid.nl/onderwerpen/antisemitisme,seed_only — verify via pipeline
+mdra_amsterdam,Meldpunt Discriminatie Regio Amsterdam (MDRA),antisemitism_policy_infrastructure,Meldpunt voor discriminatie inclusief antisemitisme in regio Amsterdam,SEED_MANUAL_029,https://www.mdra.nl,seed_only — verify via pipeline
+kozp_nl,KOZP (Kick Out Zwarte Piet),antisemitism_policy_infrastructure,Actiegroep gericht op antiracisme; relevant voor antisemitisme-referentiekader,SEED_MANUAL_030,https://www.kickoutzwartepiet.nl,seed_only — verify via pipeline
+ncdr_nl,NCDR (Nationaal Coördinator tegen Discriminatie en Racisme),antisemitism_policy_infrastructure,Nederlandse coördinator voor bestrijding van discriminatie en racisme,SEED_MANUAL_031,https://www.ncdr.nl,seed_only — verify via pipeline
+evc_polarisatie,Expertisecentrum Veiligheid en Criminaliteit (EVC),antisemitism_policy_infrastructure,Onderdeel van EVC gericht op polarisatie waaronder antisemitisme,SEED_MANUAL_032,https://hetccv.nl,seed_only — verify via pipeline
+palestina_komitee_nl,Palestina Komitee Nederland,palestine_rights_counter_lobby,Palestina-solidariteitsorganisatie actief in Nederland,SEED_MANUAL_033,https://www.palestina-komitee.nl,seed_only — verify via pipeline
+bds_nederland,BDS Nederland,palestine_rights_counter_lobby,Nederlandse tak van de Boycot Desinvesteringen Sancties beweging,SEED_MANUAL_034,https://bdsnederland.nl,seed_only — verify via pipeline
+the_rights_forum,The Rights Forum,palestine_rights_counter_lobby,Stichting opgericht door Dries van Agt voor Palestijnse rechten,SEED_MANUAL_035,https://www.rightsforum.org,seed_only — verify via pipeline
+een_ander_joods_geluid,Een Ander Joods Geluid,palestine_rights_counter_lobby,Joodse organisatie kritisch op Israël-beleid en voor Palestijnse rechten,SEED_MANUAL_036,https://www.eajg.nl,seed_only — verify via pipeline
+stop_de_bezetting,Stop de Bezetting,palestine_rights_counter_lobby,Actiegroep tegen de Israëlische bezetting van Palestijnse gebieden,SEED_MANUAL_037,https://www.stopdebezetting.nl,seed_only — verify via pipeline
+al_awda_nederland,Al-Awda Nederland,palestine_rights_counter_lobby,Nederlandse tak van Palestijnse recht-op-terugkeer beweging,SEED_MANUAL_038,https://al-awda.org,seed_only — verify via pipeline
+oxfam_novib,Oxfam Novib,palestine_rights_counter_lobby,Nederlandse ontwikkelingsorganisatie met Gaza-gerelateerde programma's,SEED_MANUAL_039,https://www.oxfamnovib.nl,seed_only — verify via pipeline
+icco_nederland,ICCO Cooperation Nederland,palestine_rights_counter_lobby,Nederlandse interkerkelijke ontwikkelingsorganisatie actief in Palestijnse gebieden,SEED_MANUAL_040,https://www.icco-cooperation.org,seed_only — verify via pipeline
+nos_nl,NOS,media_actor,Nederlandse publieke omroeporganisatie voor nieuws en actualiteiten,SEED_MANUAL_041,https://nos.nl,seed_only — verify via pipeline
+rtl_nieuws,RTL Nieuws,media_actor,Commerciële nieuwsredactie van RTL Nederland,SEED_MANUAL_042,https://www.rtlnieuws.nl,seed_only — verify via pipeline
+nu_nl,Nu.nl,media_actor,Grootste Nederlandse online nieuwsplatform,SEED_MANUAL_043,https://www.nu.nl,seed_only — verify via pipeline
+de_volkskrant,De Volkskrant,media_actor,Nederlands kwaliteitsdagblad met eigen nieuwsredactie,SEED_MANUAL_044,https://www.volkskrant.nl,seed_only — verify via pipeline
+nrc_nl,NRC,media_actor,Nederlands dagblad van liberaal-intellectuele signatuur,SEED_MANUAL_045,https://www.nrc.nl,seed_only — verify via pipeline
+trouw_nl,Trouw,media_actor,Nederlands dagblad met christelijke oorsprong,SEED_MANUAL_046,https://www.trouw.nl,seed_only — verify via pipeline
+ad_nl,AD (Algemeen Dagblad),media_actor,Grootste Nederlandse krant met focus op regionaal en algemeen nieuws,SEED_MANUAL_047,https://www.ad.nl,seed_only — verify via pipeline
+het_parool,Het Parool,media_actor,Amsterdams dagblad met stedelijke en nationale dekking,SEED_MANUAL_048,https://www.parool.nl,seed_only — verify via pipeline
+doorbraak_eu,Doorbraak.eu,alternative_media_actor,Alternatief nieuws- en opinieplatform met progressieve signatuur,SEED_MANUAL_049,https://www.doorbraak.eu,seed_only — verify via pipeline
+the_post_online,The Post Online,alternative_media_actor,Onafhankelijk Nederlands nieuws- en opinieblog,SEED_MANUAL_050,https://www.thepostonline.nl,seed_only — verify via pipeline
+geenstijl_nl,GeenStijl,alternative_media_actor,Nederlands nieuws- en shockblog met eigen journalistieke methode,SEED_MANUAL_051,https://www.geenstijl.nl,seed_only — verify via pipeline
+wynias_week,Wynia's Week,alternative_media_actor,Onafhankelijk Nederlands tijdschrift en opinieplatform,SEED_MANUAL_052,https://www.wyniasweek.nl,seed_only — verify via pipeline
+cafe_weltschmerz,Cafe Weltschmerz,alternative_media_actor,Onafhankelijk Nederlands discussie- en interviewplatform,SEED_MANUAL_053,https://www.cafeweltschmerz.nl,seed_only — verify via pipeline
+buitenhof,Buitenhof (VPRO/NPO),talkshow_or_program_actor,Actualiteitenprogramma en talkshow van de VPRO op NPO,SEED_MANUAL_054,https://www.vpro.nl/buitenhof,seed_only — verify via pipeline
+wnl_op_zondag,WNL Op Zondag,talkshow_or_program_actor,Actualiteiten talkshow van omroep WNL uitgezonden op zondag,SEED_MANUAL_055,https://www.wnl.tv/opzondag,seed_only — verify via pipeline
+op1_npo,Op1 (NPO),talkshow_or_program_actor,Dagelijkse talkshow op NPO1 over actualiteiten,SEED_MANUAL_056,https://www.npostart.nl/op1,seed_only — verify via pipeline
+nieuwsuur,Nieuwsuur (NOS/NPO),talkshow_or_program_actor,Verdiepend actualiteitenprogramma van NOS en NTR op NPO2,SEED_MANUAL_057,https://nos.nl/nieuwsuur,seed_only — verify via pipeline
+eenvandaag,EenVandaag (AVROTROS/NPO),talkshow_or_program_actor,Dagelijks actualiteitenprogramma van AVROTROS op NPO1,SEED_MANUAL_058,https://www.eenvandaag.nl,seed_only — verify via pipeline
+vvd,VVD,party_actor,Fractie van de Volkspartij voor Vrijheid en Democratie in de Tweede Kamer,SEED_MANUAL_059,https://www.vvd.nl,seed_only — verify via pipeline
+d66,D66,party_actor,Fractie van Democraten 66 in de Tweede Kamer,SEED_MANUAL_060,https://d66.nl,seed_only — verify via pipeline
+pvv,PVV,party_actor,Fractie van de Partij voor de Vrijheid in de Tweede Kamer,SEED_MANUAL_061,https://www.pvv.nl,seed_only — verify via pipeline
+cda,CDA,party_actor,Fractie van het Christen-Democratisch Appèl in de Tweede Kamer,SEED_MANUAL_062,https://www.cda.nl,seed_only — verify via pipeline
+sp,SP,party_actor,Fractie van de Socialistische Partij in de Tweede Kamer,SEED_MANUAL_063,https://www.sp.nl,seed_only — verify via pipeline
+groenlinks_pvda,GroenLinks-PvdA,party_actor,Fractie van de fusiepartij GroenLinks-PvdA in de Tweede Kamer,SEED_MANUAL_064,https://groenlinkspvda.nl,seed_only — verify via pipeline
+nsc,NSC (Nieuw Sociaal Contract),party_actor,Fractie van Nieuw Sociaal Contract in de Tweede Kamer,SEED_MANUAL_065,https://partijnieuwsociaalcontract.nl,seed_only — verify via pipeline
+bbb,BBB (BoerBurgerBeweging),party_actor,Fractie van de BoerBurgerBeweging in de Tweede Kamer,SEED_MANUAL_066,https://boerburgerbeweging.nl,seed_only — verify via pipeline
+sgp,SGP,party_actor,Fractie van de Staatkundig Gereformeerde Partij in de Tweede Kamer,SEED_MANUAL_067,https://www.sgp.nl,seed_only — verify via pipeline
+christenunie,ChristenUnie,party_actor,Fractie van de ChristenUnie in de Tweede Kamer,SEED_MANUAL_068,https://www.christenunie.nl,seed_only — verify via pipeline
+min_bz,Ministerie van Buitenlandse Zaken,ministry_actor,Ministerie verantwoordelijk voor Nederlands buitenlandbeleid en diplomatieke betrekkingen,SEED_MANUAL_069,https://www.rijksoverheid.nl/ministeries/ministerie-van-buitenlandse-zaken,seed_only — verify via pipeline
+min_bzk,Ministerie van Binnenlandse Zaken en Koninkrijksrelaties,ministry_actor,Ministerie voor binnenlands bestuur en koninkrijksrelaties,SEED_MANUAL_070,https://www.rijksoverheid.nl/ministeries/ministerie-van-binnenlandse-zaken-en-koninkrijksrelaties,seed_only — verify via pipeline
+min_jen_v,Ministerie van Justitie en Veiligheid,ministry_actor,Ministerie verantwoordelijk voor rechtsstaat justitie en nationale veiligheid,SEED_MANUAL_071,https://www.rijksoverheid.nl/ministeries/ministerie-van-justitie-en-veiligheid,seed_only — verify via pipeline
+min_ocw,Ministerie van Onderwijs Cultuur en Wetenschap,ministry_actor,Ministerie voor onderwijs cultuur en wetenschapsbeleid,SEED_MANUAL_072,https://www.rijksoverheid.nl/ministeries/ministerie-van-onderwijs-cultuur-en-wetenschap,seed_only — verify via pipeline
+min_defensie,Ministerie van Defensie,ministry_actor,Ministerie verantwoordelijk voor de krijgsmacht en defensiebeleid,SEED_MANUAL_073,https://www.rijksoverheid.nl/ministeries/ministerie-van-defensie,seed_only — verify via pipeline
+min_ez,Ministerie van Economische Zaken,ministry_actor,Ministerie voor economisch beleid en wapenexport-gerelateerde besluitvorming,SEED_MANUAL_074,https://www.rijksoverheid.nl/ministeries/ministerie-van-economische-zaken,seed_only — verify via pipeline
+nctv_nl,NCTV (Nationaal Coördinator Terrorismebestrijding en Veiligheid),government_actor,Nationaal coördinatieorgaan voor terrorismebestrijding en nationale veiligheid,SEED_MANUAL_075,https://www.nctv.nl,seed_only — verify via pipeline
+aivd_nl,AIVD,government_actor,Algemene Inlichtingen- en Veiligheidsdienst van Nederland,SEED_MANUAL_076,https://www.aivd.nl,seed_only — verify via pipeline
+politie_nederland,Politie Nederland,government_actor,Nationale politie van Nederland als institutionele actor,SEED_MANUAL_077,https://www.politie.nl,seed_only — verify via pipeline
+gemeente_amsterdam,Gemeente Amsterdam,government_actor,Gemeente Amsterdam met eigen antisemitisme- en demonstratiebeleid,SEED_MANUAL_078,https://www.amsterdam.nl,seed_only — verify via pipeline
+cidi_academie,CIDI Academie,academic_actor,Academische tak van CIDI gericht op onderzoek en educatie,SEED_MANUAL_079,https://www.cidi.nl/academie,seed_only — verify via pipeline
+uva_joodse_studies,Universiteit van Amsterdam — Centrum voor Joodse Studies,academic_actor,Academisch centrum voor Joodse studies aan de UvA,SEED_MANUAL_080,https://www.uva.nl,seed_only — verify via pipeline
+yad_vashem_nederland,Yad Vashem Nederland,academic_actor,Nederlandse vertegenwoordiging van het Israëlische Holocaustherinneringsinstituut,SEED_MANUAL_081,https://www.yadvashem.org,seed_only — verify via pipeline
+lde_centre_israel,LDE Centre for Sustainability,academic_actor,Leiden-Delft-Erasmus academisch centrum met Israëlische samenwerkingsverbanden,SEED_MANUAL_082,https://www.centre-for-sustainability.nl,seed_only — verify via pipeline
+ejc_eu,European Jewish Congress (EJC),eu_register_actor,Overkoepelende Europese Joodse organisatie geregistreerd in EU-transparantieregister,SEED_MANUAL_083,https://eurojewcong.org,seed_only — verify via pipeline
+bnai_brith_eu,B'nai B'rith International EU,eu_register_actor,Internationale Joodse ngo met EU-transparantieregister vermelding,SEED_MANUAL_084,https://www.bnaibrith.org,seed_only — verify via pipeline
+eu_coalition_for_israel,European Coalition for Israel (ECI),eu_register_actor,Christelijke pro-Israël coalitie geregistreerd in EU-transparantieregister,SEED_MANUAL_085,https://www.ec4i.org,seed_only — verify via pipeline

@@ -54,6 +54,22 @@ mypy src/
 7. Retain weak/light signals but label them
 8. Lack of evidence != lack of activity != concealment
 
+## Seed Rules (CRITICAL)
+
+- **Seeds zijn nooit bewijs.** Voeg nooit seeds direct toe aan `actors.csv` zonder volledige pipeline-verificatie (collect → extract → classify → validate → export).
+- **Verwijder nooit seeds** uit `data/input/manual_seeds.csv` zonder ze eerst te verifieren als onrelevant via gedocumenteerd brononderzoek. Gedocumenteerde verwijderingen gaan naar `reports/audit_log.md`.
+- Elke seed moet minimaal `actor_id`, `name`, `category`, `url`, en `notes` met de string `seed_only` bevatten.
+- Valideer seeds met `python scripts/validate_seeds.py` voordat collectie start.
+
+## Windows-Specific Dependencies
+
+- Windows vereist post-install stappen na `pip install`:
+  - `playwright install chromium` — browser binary voor Playwright
+  - `python -m spacy download nl_core_news_sm` — Nederlands NLP model voor spaCy
+- `colorama` is verplicht op Windows voor terminal-kleuren in `rich`.
+- `lxml` kan falen zonder Visual C++ runtime — zie https://lxml.de/installation.html.
+- Gebruik `scripts/install_all.bat` of `scripts/install_all.ps1` voor volledige Windows installatie.
+
 ## Category Rules
 
 - Jewish civic organizations are NOT automatically pro-Israel or lobby

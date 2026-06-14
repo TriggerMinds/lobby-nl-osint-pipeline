@@ -7,7 +7,7 @@ name = "lobby-nl"
 version = "1.0.0"
 description = "Evidence-first OSINT research pipeline for mapping lobbying practices and geopolitical influence in the Netherlands"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10,<3.13"
 license = {text = "MIT"}
 authors = [{name = "Research Pipeline"}]
 dependencies = [
