@@ -97,7 +97,7 @@ def collect(
                 src.archive_available = True
 
     stats = web.get_stats_summary()
-    alive = stats["ok"] + stats["playwright"]
+    alive = stats["ok"] + stats["playwright"] + stats.get("wayback", 0)
     console.log(f"[COLLECT DONE] {stats['total_urls']} URLs verwerkt — {alive} OK, {stats['blocked_crawl4ai']} geblokkeerd (Crawl4AI), {stats['blocked_opacity']} geblokkeerd (opacity_signal), {stats['dead']} dood")
     console.log(f"[COLLECT DONE] Totaal: {stats['total_linked']} pagina's gecollect in {m}m {s}s")
 
@@ -472,7 +472,7 @@ def full_pipeline(
                     sources.extend(page_sources)
 
             stats = web.get_stats_summary()
-            alive = stats["ok"] + stats["playwright"]
+            alive = stats["ok"] + stats["playwright"] + stats.get("wayback", 0)
             console.log(f"[COLLECT DONE] {stats['total_urls']} URLs verwerkt — {alive} OK, {stats['blocked_crawl4ai']} geblokkeerd (Crawl4AI), {stats['blocked_opacity']} geblokkeerd (opacity_signal), {stats['dead']} dood")
             console.log(f"[COLLECT DONE] Totaal: {stats['total_linked']} pagina's gecollect in {time.time() - t_step:.0f}s")
 

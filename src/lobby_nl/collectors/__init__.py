@@ -28,7 +28,7 @@ from lobby_nl.models import OpacityMechanism, OpacitySignal, Source
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
-_STATS_RESET = {"ok": 0, "blocked_crawl4ai": 0, "blocked_opacity": 0, "dead": 0, "playwright": 0, "total_linked": 0}
+_STATS_RESET = {"ok": 0, "blocked_crawl4ai": 0, "blocked_opacity": 0, "dead": 0, "playwright": 0, "wayback": 0, "total_linked": 0}
 
 
 def parse_html_or_xml(content: str, url: str = "") -> BeautifulSoup:
@@ -285,6 +285,7 @@ class WebCollector(BaseCollector):
         self._depth_overrides = depth_overrides or _load_depth_overrides()
         self._seed_domains = _load_seed_domains()
         self._relevance_keywords = _load_relevance_keywords()
+        self._wayback = None
         self._opacity_signals: list[OpacitySignal] = []
         self._collect_start_time = 0.0
 
@@ -517,6 +518,21 @@ class WebCollector(BaseCollector):
             fake_resp.headers["X-Collector"] = "crawl4ai_stealth_fallback"
             return fake_resp, fallback_signal
 
+        self.console.log(f"{self._url_prefix()} {url} — 403, Wayback Machine fallback...")
+        if self._wayback is None:
+            from lobby_nl.collectors.wayback_collector import WaybackCollector
+            self._wayback = WaybackCollector(output_dir=self.output_dir)
+        wayback_src = self._wayback.collect_wayback(url)
+        if wayback_src:
+            from requests import Response
+            fake_resp = Response()
+            fake_resp.status_code = 200
+            fake_resp._content = (wayback_src.content_text or "").encode("utf-8")
+            fake_resp.url = url
+            fake_resp.encoding = "utf-8"
+            fake_resp.headers["X-Collector"] = "wayback_fallback"
+            return fake_resp, None
+
         return None, None
 
     def collect_urls(self, urls: list[str]) -> list[Source]:
@@ -559,6 +575,9 @@ class WebCollector(BaseCollector):
             elif "crawl4ai" in collector_meta.lower():
                 collector_label = "Crawl4AI"
                 self._stats["blocked_crawl4ai"] += 1
+            elif "wayback" in collector_meta.lower():
+                collector_label = "Wayback"
+                self._stats["wayback"] += 1
             else:
                 self._stats["ok"] += 1
 
@@ -606,6 +625,10 @@ class WebCollector(BaseCollector):
             elif resp and resp.headers.get("X-Collector", "").startswith("crawl4ai"):
                 attempts_tried.append("Playwright")
                 attempts_tried.append("Crawl4AI")
+            elif resp and resp.headers.get("X-Collector", "").startswith("wayback"):
+                attempts_tried.append("Playwright")
+                attempts_tried.append("Crawl4AI")
+                attempts_tried.append("Wayback")
 
             if elapsed > URL_TIMEOUT:
                 self._failures.append({"url": url, "status": resp.status_code if resp else 0, "error_type": "timeout", "attempts": attempts_tried, "result": "opacity_signal"})
@@ -676,7 +699,7 @@ class WebCollector(BaseCollector):
         return sources
 
     def get_stats_summary(self) -> dict:
-        total_urls = sum(self._stats[k] for k in ("ok", "blocked_crawl4ai", "blocked_opacity", "dead", "playwright"))
+        total_urls = sum(self._stats[k] for k in ("ok", "blocked_crawl4ai", "blocked_opacity", "dead", "playwright", "wayback"))
         return {**self._stats, "total_urls": total_urls}
 
     def _check_failure_threshold(self) -> None:
@@ -736,7 +759,7 @@ class WebCollector(BaseCollector):
             "",
             "### Samenvatting",
             f"- Totaal URLs geprobeerd: {total}",
-            f"- Succesvol: {stats['ok'] + stats['playwright']} (WebCollector: {stats['ok']}, Playwright: {stats['playwright']}, Crawl4AI: {stats['blocked_crawl4ai']})",
+            f"- Succesvol: {stats['ok'] + stats['playwright'] + stats['wayback']} (WebCollector: {stats['ok']}, Playwright: {stats['playwright']}, Crawl4AI: {stats['blocked_crawl4ai']}, Wayback: {stats['wayback']})",
             f"- Geblokkeerd: {stats['blocked_opacity']} -> opacity_signals aangemaakt",
             f"- Dood: {stats['dead']}",
             f"- Irrelevant gefilterd: {self._skipped_count} URLs overgeslagen",
