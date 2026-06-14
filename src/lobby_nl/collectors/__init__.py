@@ -93,6 +93,21 @@ def _load_seed_domains(config_path: Optional[Path] = None) -> dict[str, dict]:
     if config_path is None:
         config_path = Path("config/sources.yaml")
     if not config_path.exists():
+        return domains
+    try:
+        import yaml
+        with open(config_path, encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+        raw = cfg.get("seed_domains", {})
+        if isinstance(raw, dict):
+            for domain, domain_cfg in raw.items():
+                if isinstance(domain_cfg, dict):
+                    domains[domain] = {
+                        "allowed_path_patterns": domain_cfg.get("allowed_path_patterns", []),
+                        "max_depth": domain_cfg.get("max_depth", 1),
+                    }
+    except Exception:
+        pass
     return domains
 
 
@@ -111,21 +126,6 @@ def _load_relevance_keywords(config_path: Optional[Path] = None) -> list[str]:
     except Exception:
         pass
     return []
-    try:
-        import yaml
-        with open(config_path, encoding="utf-8") as f:
-            cfg = yaml.safe_load(f)
-        raw = cfg.get("seed_domains", {})
-        if isinstance(raw, dict):
-            for domain, domain_cfg in raw.items():
-                if isinstance(domain_cfg, dict):
-                    domains[domain] = {
-                        "allowed_path_patterns": domain_cfg.get("allowed_path_patterns", []),
-                        "max_depth": domain_cfg.get("max_depth", 1),
-                    }
-    except Exception:
-        pass
-    return domains
 
 BROWSER_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
