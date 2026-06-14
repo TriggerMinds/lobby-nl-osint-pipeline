@@ -127,6 +127,22 @@ def _load_relevance_keywords(config_path: Optional[Path] = None) -> list[str]:
         pass
     return []
 
+
+BLOCKED_SIGNATURES = [
+    "checking your browser",
+    "even geduld",
+    "just a moment",
+    "cf-browser-verification",
+    "cloudflare",
+    "challenge-platform",
+    "ray id",
+    "please wait",
+    "verifying you are human",
+    "ddos protection",
+    "enable javascript",
+    "cf_clearance",
+]
+
 BROWSER_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -184,6 +200,12 @@ class BaseCollector:
 
     def _rotate_user_agent(self) -> None:
         self.session.headers.update({"User-Agent": _get_random_user_agent()})
+
+    def _is_blocked_content(self, html: str) -> bool:
+        if len(html) < 1000:
+            return True
+        html_lower = html.lower()
+        return sum(1 for sig in BLOCKED_SIGNATURES if sig in html_lower) >= 2
 
     def fetch_page(self, url: str, timeout: int = 30) -> Optional[requests.Response]:
         last_exception: Optional[Exception] = None
@@ -288,6 +310,7 @@ class WebCollector(BaseCollector):
         self._wayback = None
         self._opacity_signals: list[OpacitySignal] = []
         self._collect_start_time = 0.0
+        self._blocked_content_count = 0
 
     @property
     def opacity_signals(self) -> list[OpacitySignal]:
@@ -479,14 +502,17 @@ class WebCollector(BaseCollector):
 
         t0 = time.time()
         resp = self.fetch_page(url)
-        if resp is not None:
+        if resp is not None and not self._is_blocked_content(resp.text):
             elapsed = time.time() - t0
             resp.headers["X-Fetch-Time"] = f"{elapsed:.1f}"
             return resp, robot_signal
+        if resp is not None:
+            self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] challenge page gedetecteerd ({len(resp.text)}b), Playwright fallback...")
+            self._blocked_content_count += 1
 
         self.console.log(f"{self._url_prefix()} {url} — 403, Playwright fallback...")
         html = self._fetch_with_playwright(url)
-        if html:
+        if html and not self._is_blocked_content(html):
             from requests import Response
             fake_resp = Response()
             fake_resp.status_code = 200
@@ -495,10 +521,13 @@ class WebCollector(BaseCollector):
             fake_resp.encoding = "utf-8"
             fake_resp.headers["X-Collector"] = "playwright_fallback"
             return fake_resp, robot_signal
+        if html:
+            self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] challenge page gedetecteerd ({len(html)}b), Crawl4AI fallback...")
+            self._blocked_content_count += 1
 
         self.console.log(f"{self._url_prefix()} {url} — 403, Crawl4AI stealth fallback...")
         html = self._fetch_with_crawl4ai(url)
-        if html:
+        if html and not self._is_blocked_content(html):
             fallback_signal = OpacitySignal(
                 signal_type=OpacityMechanism.blocking_403,
                 description=f"Blocked by server (403), retrieved via Crawl4AI stealth for {url}",
@@ -515,6 +544,9 @@ class WebCollector(BaseCollector):
             fake_resp.encoding = "utf-8"
             fake_resp.headers["X-Collector"] = "crawl4ai_stealth_fallback"
             return fake_resp, fallback_signal
+        if html:
+            self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] challenge page gedetecteerd ({len(html)}b), Wayback fallback...")
+            self._blocked_content_count += 1
 
         self.console.log(f"{self._url_prefix()} {url} — 403, Wayback Machine fallback...")
         if self._wayback is None:
@@ -785,7 +817,9 @@ class WebCollector(BaseCollector):
             lines.append("- Meerderheid via Playwright opgehaald → JS-rendering domineert; anti-bot detectie actief op veel sites")
         if self._skipped_count > 50:
             lines.append(f"- {self._skipped_count} irrelevante links overgeslagen → relevantiefilter werkt correct")
-        if not self._failures and not stats["blocked_opacity"]:
+        if self._blocked_content_count > 0:
+            lines.append(f"- {self._blocked_content_count} URLs gaven Cloudflare challenge page → Crawl4AI stealth of handmatige Wayback verificatie aanbevolen")
+        if not self._failures and not stats["blocked_opacity"] and self._blocked_content_count == 0:
             lines.append("- Geen problemen gedetecteerd — alle URLs succesvol gecollect")
 
         path = out / "collect_diagnostics.md"
