@@ -93,7 +93,24 @@ def _load_seed_domains(config_path: Optional[Path] = None) -> dict[str, dict]:
     if config_path is None:
         config_path = Path("config/sources.yaml")
     if not config_path.exists():
-        return domains
+    return domains
+
+
+def _load_relevance_keywords(config_path: Optional[Path] = None) -> list[str]:
+    if config_path is None:
+        config_path = Path("config/sources.yaml")
+    if not config_path.exists():
+        return []
+    try:
+        import yaml
+        with open(config_path, encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+        raw = cfg.get("relevance_keywords", [])
+        if isinstance(raw, list):
+            return [str(k).lower() for k in raw if k]
+    except Exception:
+        pass
+    return []
     try:
         import yaml
         with open(config_path, encoding="utf-8") as f:
@@ -147,6 +164,8 @@ class BaseCollector:
         self._url_label = ""
         self._url_index = 0
         self._url_total = 0
+        self._failures: list[dict] = []
+        self._skipped_count = 0
 
     def _url_prefix(self) -> str:
         if self._url_label and self._url_total:
@@ -265,7 +284,9 @@ class WebCollector(BaseCollector):
         )
         self._depth_overrides = depth_overrides or _load_depth_overrides()
         self._seed_domains = _load_seed_domains()
+        self._relevance_keywords = _load_relevance_keywords()
         self._opacity_signals: list[OpacitySignal] = []
+        self._collect_start_time = 0.0
 
     @property
     def opacity_signals(self) -> list[OpacitySignal]:
@@ -381,6 +402,21 @@ class WebCollector(BaseCollector):
         path = parsed.path or "/"
         return any(path.startswith(p) for p in patterns)
 
+    def _url_path_has_keyword(self, url: str) -> bool:
+        if not self._relevance_keywords:
+            return True
+        path = urlparse(url).path.lower()
+        return any(kw in path for kw in self._relevance_keywords)
+
+    def _page_has_keyword(self, html: str) -> bool:
+        if not self._relevance_keywords:
+            return True
+        soup = parse_html_or_xml(html, url="")
+        title = soup.title.string.lower() if soup.title and soup.title.string else ""
+        h1_tags = [h.get_text(strip=True).lower() for h in soup.find_all("h1")]
+        combined = title + " " + " ".join(h1_tags)
+        return any(kw in combined for kw in self._relevance_keywords)
+
     def _extract_links_static(self, html: str, base_url: str) -> list[str]:
         soup = parse_html_or_xml(html, url=base_url)
         links: list[str] = []
@@ -427,6 +463,10 @@ class WebCollector(BaseCollector):
             if link in visited:
                 continue
             if not self._match_domain_path(link, base_domain):
+                continue
+            if not self._url_path_has_keyword(link):
+                self._skipped_count += 1
+                self.console.log(f"{self._url_prefix()} [SKIP] niet-relevant: {link}")
                 continue
             filtered.append(link)
         return filtered
@@ -536,6 +576,8 @@ class WebCollector(BaseCollector):
         to_visit = [(base_url, 0)]
         base_domain = urlparse(base_url).netloc
         url_index = 0
+        URL_TIMEOUT = 120
+        self._collect_start_time = self._collect_start_time or time.time()
         while to_visit:
             url, depth = to_visit.pop(0)
             if url in visited or depth > max_depth:
@@ -548,11 +590,40 @@ class WebCollector(BaseCollector):
             self.console.log(f"{self._url_prefix()} {url} — WebCollector...")
 
             t0 = time.time()
-            resp, block_signal = self._fetch_page_robust(url)
+            try:
+                resp, block_signal = self._fetch_page_robust(url)
+            except Exception as e:
+                self.console.log(f"{self._url_prefix()} {url} — exception in fetch: {e}")
+                self._failures.append({"url": url, "status": 0, "error_type": "exception", "attempts": ["WebCollector"], "result": "dead"})
+                self._stats["dead"] += 1
+                sources.append(Source(url=url, is_dead=True, notes=f"Fetch exception: {e}"))
+                continue
+
             elapsed = time.time() - t0
+            attempts_tried = ["WebCollector"]
+            if resp and resp.headers.get("X-Collector", "").startswith("playwright"):
+                attempts_tried.append("Playwright")
+            elif resp and resp.headers.get("X-Collector", "").startswith("crawl4ai"):
+                attempts_tried.append("Playwright")
+                attempts_tried.append("Crawl4AI")
+
+            if elapsed > URL_TIMEOUT:
+                self._failures.append({"url": url, "status": resp.status_code if resp else 0, "error_type": "timeout", "attempts": attempts_tried, "result": "opacity_signal"})
+                signal = OpacitySignal(
+                    signal_type=OpacityMechanism.blocking_403,
+                    description=f"URL timeout after {elapsed:.0f}s: {url}",
+                    alternative_explanation="Server reageerde te traag; crawler gaat door",
+                    source_ids=[],
+                    follow_up_target=True,
+                )
+                self._opacity_signals.append(signal)
+                self.console.log(f"{self._url_prefix()} {url} — TIMEOUT ({elapsed:.0f}s > {URL_TIMEOUT}s), opacity_signal + doorgaan")
+                continue
 
             if block_signal and not resp:
                 self._stats["blocked_opacity"] += 1
+                self._failures.append({"url": url, "status": 403, "error_type": "403", "attempts": attempts_tried, "result": "opacity_signal"})
+                self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] consistent 403 na {len(attempts_tried)} pogingen — opacity_signal aangemaakt, doorgaan")
                 sources.append(Source(url=url, is_dead=True,
                     notes=f"Blocked by robots.txt: {block_signal.description}",
                     metadata={"collector": self.__class__.__name__, "opacity_signal": block_signal.signal_id}))
@@ -565,6 +636,8 @@ class WebCollector(BaseCollector):
                 continue
             if resp is None:
                 self._stats["dead"] += 1
+                self._failures.append({"url": url, "status": 0, "error_type": "dead", "attempts": attempts_tried, "result": "dead"})
+                self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] na {len(attempts_tried)} pogingen — opacity_signal aangemaakt, doorgaan")
                 sources.append(Source(url=url, is_dead=True))
                 continue
 
@@ -577,10 +650,13 @@ class WebCollector(BaseCollector):
 
             link_count = 0
             if depth < max_depth:
-                discovered = self._extract_links_from_page(resp.text, url, url, base_domain, same_domain, visited)
-                link_count = len(discovered)
-                for full_url in discovered:
-                    to_visit.append((full_url, depth + 1))
+                try:
+                    discovered = self._extract_links_from_page(resp.text, url, url, base_domain, same_domain, visited)
+                    link_count = len(discovered)
+                    for full_url in discovered:
+                        to_visit.append((full_url, depth + 1))
+                except Exception as e:
+                    self.console.log(f"{self._url_prefix()} {url} — link extraction error: {e}")
 
             fetch_time = resp.headers.get("X-Fetch-Time", f"{elapsed:.1f}")
             collector_label = "WebCollector"
@@ -590,6 +666,7 @@ class WebCollector(BaseCollector):
             elif "crawl4ai" in collector_meta.lower():
                 collector_label = "Crawl4AI"
                 self._stats["blocked_crawl4ai"] += 1
+                self._failures.append({"url": url, "status": 200, "error_type": "403", "attempts": attempts_tried, "result": "ok"})
             else:
                 self._stats["ok"] += 1
 
@@ -601,6 +678,95 @@ class WebCollector(BaseCollector):
     def get_stats_summary(self) -> dict:
         total_urls = sum(self._stats[k] for k in ("ok", "blocked_crawl4ai", "blocked_opacity", "dead", "playwright"))
         return {**self._stats, "total_urls": total_urls}
+
+    def _check_failure_threshold(self) -> None:
+        stats = self.get_stats_summary()
+        total = stats["total_urls"]
+        if total == 0:
+            return
+        failed = stats["blocked_opacity"] + stats["dead"]
+        pct = failed / total * 100
+        if pct > 80:
+            self.console.log(f"\n[CRITICAL] {pct:.0f}% van {total} URLs gefaald → pipeline stopt.")
+            self.console.log(f"Diagnostics: reports/collect_diagnostics.json")
+            self.console.log(f"Rapport: reports/collect_diagnostics.md")
+
+    def generate_diagnostics_json(self, output_dir: Optional[Path] = None) -> Path:
+        out = output_dir or Path("reports")
+        out.mkdir(parents=True, exist_ok=True)
+        stats = self.get_stats_summary()
+        total = stats["total_urls"]
+        failed = stats["blocked_opacity"] + stats["dead"]
+        elapsed = time.time() - self._collect_start_time if self._collect_start_time else 0
+        avg_time = elapsed / total if total > 0 else 0
+        diagnostics = {
+            "collected_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "summary": {
+                "total_urls": total,
+                "ok": stats["ok"] + stats["playwright"],
+                "webcollector": stats["ok"],
+                "playwright": stats["playwright"],
+                "crawl4ai": stats["blocked_crawl4ai"],
+                "blocked_opacity": stats["blocked_opacity"],
+                "dead": stats["dead"],
+                "skipped_irrelevant": self._skipped_count,
+                "failure_pct": round(failed / total * 100, 1) if total else 0,
+                "avg_time_s": round(avg_time, 1),
+            },
+            "failures": self._failures,
+            "opacity_signals": len(self._opacity_signals),
+        }
+        path = out / "collect_diagnostics.json"
+        import json as _json
+        path.write_text(_json.dumps(diagnostics, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+        return path
+
+    def generate_diagnostics_md(self, output_dir: Optional[Path] = None) -> Path:
+        out = output_dir or Path("reports")
+        out.mkdir(parents=True, exist_ok=True)
+        stats = self.get_stats_summary()
+        total = stats["total_urls"]
+        failed = stats["blocked_opacity"] + stats["dead"]
+        elapsed = time.time() - self._collect_start_time if self._collect_start_time else 0
+        avg_time = elapsed / total if total > 0 else 0
+        m, s = divmod(int(elapsed), 60)
+
+        lines = [
+            f"## Collect Diagnostics — {time.strftime('%Y-%m-%d %H:%M')}",
+            "",
+            "### Samenvatting",
+            f"- Totaal URLs geprobeerd: {total}",
+            f"- Succesvol: {stats['ok'] + stats['playwright']} (WebCollector: {stats['ok']}, Playwright: {stats['playwright']}, Crawl4AI: {stats['blocked_crawl4ai']})",
+            f"- Geblokkeerd: {stats['blocked_opacity']} -> opacity_signals aangemaakt",
+            f"- Dood: {stats['dead']}",
+            f"- Irrelevant gefilterd: {self._skipped_count} URLs overgeslagen",
+            f"- Gemiddelde tijd per URL: {avg_time:.1f}s",
+            f"- Totale duur: {m}m {s}s",
+            "",
+            "### Problemen gevonden",
+            "| URL | Status | Geprobeerd | Resultaat |",
+            "|-----|--------|------------|-----------|",
+        ]
+        for f in self._failures:
+            attempts = "→".join(f.get("attempts", []))
+            lines.append(f"| {f['url'][:80]} | {f.get('status', '?')} | {attempts} | {f.get('result', '?')} |")
+
+        lines.append("")
+        lines.append("### Aanbevelingen")
+        if stats["blocked_opacity"] > 3:
+            lines.append(f"- {stats['blocked_opacity']} URLs geblokkeerd door robots.txt → overweeg handmatige seed-verificatie")
+        if stats["dead"] > 3:
+            lines.append(f"- {stats['dead']} URLs onbereikbaar → controleer netwerktoegang of site-beschikbaarheid")
+        if stats["playwright"] > stats["ok"]:
+            lines.append("- Meerderheid via Playwright opgehaald → JS-rendering domineert; anti-bot detectie actief op veel sites")
+        if self._skipped_count > 50:
+            lines.append(f"- {self._skipped_count} irrelevante links overgeslagen → relevantiefilter werkt correct")
+        if not self._failures and not stats["blocked_opacity"]:
+            lines.append("- Geen problemen gedetecteerd — alle URLs succesvol gecollect")
+
+        path = out / "collect_diagnostics.md"
+        path.write_text("\n".join(lines), encoding="utf-8")
+        return path
 
     def _save_raw(self, url: str, html: str) -> None:
         safe_name = re.sub(r"[^a-zA-Z0-9]", "_", url)[:100]

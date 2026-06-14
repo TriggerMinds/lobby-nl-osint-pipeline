@@ -101,6 +101,12 @@ def collect(
     console.log(f"[COLLECT DONE] {stats['total_urls']} URLs verwerkt — {alive} OK, {stats['blocked_crawl4ai']} geblokkeerd (Crawl4AI), {stats['blocked_opacity']} geblokkeerd (opacity_signal), {stats['dead']} dood")
     console.log(f"[COLLECT DONE] Totaal: {stats['total_linked']} pagina's gecollect in {m}m {s}s")
 
+    dpath = web.generate_diagnostics_json()
+    mpath = web.generate_diagnostics_md()
+    console.log(f"[DIAGNOSTICS] {dpath}")
+    console.log(f"[DIAGNOSTICS] {mpath}")
+    web._check_failure_threshold()
+
     all_data = {
         "sources": [s.model_dump() for s in sources],
         "collected_at": datetime.now(timezone.utc).isoformat(),
@@ -469,6 +475,12 @@ def full_pipeline(
             alive = stats["ok"] + stats["playwright"]
             console.log(f"[COLLECT DONE] {stats['total_urls']} URLs verwerkt — {alive} OK, {stats['blocked_crawl4ai']} geblokkeerd (Crawl4AI), {stats['blocked_opacity']} geblokkeerd (opacity_signal), {stats['dead']} dood")
             console.log(f"[COLLECT DONE] Totaal: {stats['total_linked']} pagina's gecollect in {time.time() - t_step:.0f}s")
+
+            dpath = web.generate_diagnostics_json()
+            mpath = web.generate_diagnostics_md()
+            console.log(f"[DIAGNOSTICS] {dpath}")
+            console.log(f"[DIAGNOSTICS] {mpath}")
+            web._check_failure_threshold()
 
             opacity_signals = [s.model_dump() for s in web.opacity_signals]
             if opacity_signals:

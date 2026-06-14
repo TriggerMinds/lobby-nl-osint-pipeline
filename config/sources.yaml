@@ -219,3 +219,29 @@ seed_domains:
       - "/resultaten"
       - "/document"
     max_depth: 1
+
+# === RELEVANCE KEYWORDS ===
+# Keywords gebruikt om irrelevante links te filteren tijdens collect.
+# Een URL wordt alleen gevolgd als het pad OF de page title/h1
+# ten minste een van deze keywords bevat.
+relevance_keywords:
+  - israel
+  - israël
+  - palestina
+  - palestijn
+  - gaza
+  - antisemitisme
+  - lobby
+  - bezetting
+  - midden-oosten
+  - cidi
+  - bds
+  - zionism
+  - joods
+  - joodse
+  - hamas
+  - hezbollah
+  - wapenleverantie
+  - wapenexport
+  - genocide
+  - appartheid
