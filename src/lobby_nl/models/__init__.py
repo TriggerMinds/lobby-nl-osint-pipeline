@@ -176,6 +176,9 @@ class OpacityMechanism(str, Enum):
     media_framing_asymmetry = "media_framing_asymmetry"
     institutional_non_response = "institutional_non_response"
     partial_disclosure = "partial_disclosure"
+    robots_txt_block = "robots_txt_block"
+    access_restricted = "access_restricted"
+    blocking_403 = "blocking_403"
 
 
 class InclusionType(str, Enum):
@@ -277,7 +280,7 @@ class Actor(BaseModel):
 
 class Claim(BaseModel):
     claim_id: str = Field(default_factory=lambda: f"clm_{uuid.uuid4().hex[:12]}")
-    actor_id: str
+    actor_id: str = ""
     claim_text: str
     claim_type: str = "statement"
     source_id: str

@@ -159,3 +159,19 @@ think_tanks_academics:
   - url: "https://www.tweedekamer.nl/"
     category: "government_actor"
     name: "Tweede Kamer officieel"
+
+# === CRAWL DEPTH OVERRIDES ===
+# Domein-specifieke crawldiepte. default geldt voor alle niet-genoemde domeinen.
+crawl_depth_overrides:
+  open.overheid.nl: 1
+  zoek.officielebekendmakingen.nl: 1
+  cidi.nl: 2
+  palestina-komitee.nl: 2
+  transparency-register.europa.eu: 1
+  tweedekamer.nl: 1
+  eerstekamer.nl: 1
+  rijksoverheid.nl: 1
+  nos.nl: 1
+  volkskrant.nl: 1
+  nrc.nl: 1
+  default: 1

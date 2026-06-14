@@ -59,6 +59,40 @@ class Crawl4AICollector(BaseCollector):
         except ImportError:
             return False
 
+    async def fetch_url_async(self, url: str, stealth: bool = True) -> Optional[dict[str, Any]]:
+        """Standalone async fetch with optional stealth mode.
+
+        Returns dict with markdown, html, title keys; None on failure.
+        """
+        if not self._crawl4ai_available():
+            return None
+        try:
+            from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
+
+            config = CrawlerRunConfig(
+                word_count_threshold=10,
+                exclude_external_links=False,
+                remove_overlay_elements=True,
+            )
+            if stealth:
+                from crawl4ai import CacheMode
+                config.cache_mode = CacheMode.BYPASS
+
+            async with AsyncWebCrawler() as crawler:
+                result = await crawler.arun(url=url, config=config)
+                if result and result.success:
+                    return {
+                        "markdown": result.markdown or "",
+                        "html": result.html or "",
+                        "title": result.metadata.get("title", "") if result.metadata else "",
+                        "url": url,
+                        "stealth": stealth,
+                    }
+                return None
+        except Exception as e:
+            print(f"[WARN] Crawl4AI fetch_url_async failed for {url}: {e}")
+            return None
+
     async def _crawl_async(self, url: str) -> Optional[dict[str, Any]]:
         """Crawl a single URL using Crawl4AI's AsyncWebCrawler.
 
@@ -146,7 +180,7 @@ class Crawl4AICollector(BaseCollector):
         return sources
 
     def collect_linked_pages(
-        self, base_url: str, max_depth: int = 1, same_domain: bool = True
+        self, base_url: str, max_depth: Optional[int] = None, same_domain: bool = True
     ) -> list[Source]:
         """Crawls linked pages using Crawl4AI with depth limit.
 

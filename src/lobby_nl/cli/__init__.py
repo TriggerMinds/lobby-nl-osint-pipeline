@@ -70,11 +70,12 @@ def collect(
         elif isinstance(data, dict) and "urls" in data:
             urls = data["urls"]
 
-    print(f"[INFO] Collecting from {len(urls)} URLs...")
+    print(f"[INFO] Collecting from {len(urls)} URLs (depth=domain-config)...")
     for url in urls:
-        print(f"  Fetching: {url}")
-        page_sources = web.collect_urls([url])
+        print(f"  Crawling: {url}")
+        page_sources = web.collect_linked_pages(url, max_depth=None)
         sources.extend(page_sources)
+        print(f"    -> {len(page_sources)} pages")
 
     print("[INFO] Checking archives for collected URLs...")
     for src in sources:
@@ -88,6 +89,7 @@ def collect(
         "sources": [s.model_dump() for s in sources],
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "url_count": len(urls),
+        "opacity_signals": [s.model_dump() for s in web.opacity_signals],
     }
     output_path = out_dir / "collected_data.json"
     output_path.write_text(json.dumps(all_data, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
@@ -365,7 +367,7 @@ def full_pipeline(
         tmp_path = Path(tmp)
 
         typer.echo("\n[1/6] COLLECTING...")
-        collected_path = tmp_path / "collected.json"
+        collected_path = tmp_path / "collected_data.json"
         if urls_file:
             from lobby_nl.collectors import WebCollector, ArchiveCollector
             urls_data = json_mod.loads(urls_file.read_text(encoding="utf-8"))
@@ -408,9 +410,9 @@ def full_pipeline(
             }
 
             for cluster, cluster_urls_list in cluster_urls.items():
-                typer.echo(f"  Cluster: {cluster} ({len(cluster_urls_list)} URLs)")
+                typer.echo(f"  Cluster: {cluster} ({len(cluster_urls_list)} URLs, depth=domain-config)")
                 for url in cluster_urls_list:
-                    page_sources = web.collect_urls([url])
+                    page_sources = web.collect_linked_pages(url, max_depth=None)
                     for src in page_sources:
                         if not src.is_dead:
                             archive_url = archive.check_archive(src.url)
@@ -418,15 +420,23 @@ def full_pipeline(
                                 src.archive_url = archive_url
                                 src.archive_available = True
                     sources.extend(page_sources)
+                    typer.echo(f"    {url}: {len(page_sources)} pages")
+
+            opacity_signals = [s.model_dump() for s in web.opacity_signals]
+            if opacity_signals:
+                typer.echo(f"  [OPACITY] {len(opacity_signals)} signal(s) logged")
+                for sig in web.opacity_signals:
+                    typer.echo(f"    - {sig.signal_type.value}: {sig.description[:100]}")
 
             all_data = {
                 "sources": [s.model_dump() for s in sources],
                 "url_count": len(urls),
                 "collected_at": datetime.now(timezone.utc).isoformat(),
+                "opacity_signals": opacity_signals,
             }
             collected_path.write_text(json_mod.dumps(all_data, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
         else:
-            collect(output=collected_path)
+            collect(urls_file=None, max_depth=1, output=tmp_path)
 
         typer.echo("\n[2/6] EXTRACTING...")
         extracted_path = tmp_path / "extracted.json"
@@ -552,6 +562,10 @@ Generated: {datetime.now(timezone.utc).isoformat()}
 
 ## Collector Adapters
 - WebCollector: General web scraping (requests + BeautifulSoup)
+- Fallback chain: requests → Playwright (JS rendering) → Crawl4AI (stealth, anti-bot)
+- Domain-specific crawl depth via config/sources.yaml
+- robots.txt respected; blocked paths logged as OpacitySignals
+- Attempted alternative entry points (sitemap.xml, /nieuws, /publicaties) on robots.txt blocks
 - ParliamentaryCollector: Tweede Kamer and Eerste Kamer search
 - EURegisterCollector: EU Transparency Register search
 - ArchiveCollector: Internet Archive Wayback Machine lookup
