@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "name": "lobby-nl",
+  "description": "Evidence-first OSINT research pipeline for lobbying in the Netherlands",
+  "commands": {
+    "collect": "python -m lobby_nl.cli.main collect",
+    "extract": "python -m lobby_nl.cli.main extract",
+    "classify": "python -m lobby_nl.cli.main classify",
+    "validate": "python -m lobby_nl.cli.main validate",
+    "export": "python -m lobby_nl.cli.main export",
+    "analyze": "python -m lobby_nl.cli.main analyze",
+    "full-pipeline": "python -m lobby_nl.cli.main full-pipeline",
+    "test": "pytest tests/ -v",
+    "lint": "ruff check src/ tests/",
+    "typecheck": "mypy src/"
+  },
+  "exports": {
+    "dir": "exports",
+    "reports_dir": "reports"
+  }
+}
