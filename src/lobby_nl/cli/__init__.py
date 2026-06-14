@@ -168,15 +168,13 @@ def extract(
                 claim = Claim(**fc)
                 claims.append(claim)
 
-            found_rels = rel_extractor.extract_relationships(src.content_text or "", actors)
+            found_rels = rel_extractor.extract_relationships(src.content_text or "", actors, src.source_id)
             for fr in found_rels:
                 try:
                     rel = Relationship(**fr)
-                    rel.source_ids = [src.source_id]
                     relationships.append(rel)
                 except Exception:
                     pass
-
             a_count = len(found_actors)
             c_count = len(found_claims)
             if a_count or c_count:
@@ -536,11 +534,10 @@ def full_pipeline(
                 found_claims = claim_extractor.extract_claims(src, [a.actor_id for a in actors])
                 for fc in found_claims:
                     claims.append(Claim(**fc))
-                found_rels = rel_extractor.extract_relationships(src.content_text or "", actors)
+                found_rels = rel_extractor.extract_relationships(src.content_text or "", actors, src.source_id)
                 for fr in found_rels:
                     try:
                         rel = Relationship(**fr)
-                        rel.source_ids = [src.source_id]
                         relationships.append(rel)
                     except Exception:
                         pass

@@ -157,13 +157,16 @@ class RelationshipExtractor:
     ]
 
     def extract_relationships(
-        self, text: str, actors: list[Actor]
+        self, text: str, actors: list[Actor], source_id: str = ""
     ) -> list[dict[str, Any]]:
         """Extract relationships: pattern-based AND co-occurrence from page-level text."""
         relationships: list[dict[str, Any]] = []
         text_lower = text.lower()
         actor_names = {a.name.lower(): a.actor_id for a in actors}
         seen_pairs: set[tuple[str, str]] = set()
+
+        if not text_lower:
+            return relationships
 
         # --- Pattern-based: explicit relationship verbs ---
         for pattern, rel_type in self.RELATIONSHIP_PATTERNS:
@@ -184,6 +187,7 @@ class RelationshipExtractor:
                         "actor_b_id": found_actors[1],
                         "relationship_type": rel_type,
                         "evidence_strength": EvidenceStrength.light,
+                        "source_ids": [source_id],
                         "context_excerpt": context[:300],
                     })
 
@@ -205,6 +209,7 @@ class RelationshipExtractor:
                         "actor_b_id": b_id,
                         "relationship_type": RelationshipType.co_occurrence,
                         "evidence_strength": EvidenceStrength.weak,
+                        "source_ids": [source_id],
                         "context_excerpt": f"Co-occurrence on page: {a_name.title()} and {b_name.title()}",
                     })
 
