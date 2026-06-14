@@ -18,6 +18,7 @@ Evidence-first, source-verifiable open-source intelligence research pipeline for
 ```bash
 pip install -e .
 playwright install chromium
+python -m spacy download nl_core_news_sm
 ```
 
 ## Quick Start

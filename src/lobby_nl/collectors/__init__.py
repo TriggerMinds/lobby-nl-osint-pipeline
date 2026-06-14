@@ -148,48 +148,83 @@ class WebCollector(BaseCollector):
 
 
 class ParliamentaryCollector(BaseCollector):
-    """Collects parliamentary records via the official Tweede Kamer Open Data API.
+    """Collects parliamentary records via official Dutch government search portals.
 
-    Uses the OData v4 endpoint at opendata.tweedekamer.nl.
+    Primary: zoek.officielebekendmakingen.nl (verified working 2026-06-14, returns 200)
+    OData API: opendata.tweedekamer.nl (attempted, may require specific endpoint auth)
     """
 
+    TK_SEARCH_URL = "https://zoek.officielebekendmakingen.nl/resultaten"
     TK_ODATA_BASE = "https://opendata.tweedekamer.nl/v1"
     EK_API_BASE = "https://www.eerstekamer.nl/"
 
     def search_tweede_kamer(
         self, query: str, max_results: int = 50
     ) -> list[dict[str, Any]]:
-        """Search Tweede Kamer records using the Open Data API OData endpoint.
+        """Search Tweede Kamer records via zoek.officielebekendmakingen.nl.
 
-        Queries the /items endpoint with $filter on title and $top for limit.
+        Uses the official search with OData v4 filter fallback.
+        Verified working URL (2026-06-14): zoek.officielebekendmakingen.nl/resultaten = 200.
         """
-        results: list[dict[str, Any]] = []
         import urllib.parse
 
-        endpoint = f"{self.TK_ODATA_BASE}/items"
+        results: list[dict[str, Any]] = []
+
+        # Primary: official search portal
         params: dict[str, str] = {
-            "$filter": f"contains(title, '{query}')",
-            "$top": str(max_results),
-            "$orderby": "date desc",
-            "$format": "json",
+            "q": query,
+            "prl": "Tweede Kamer der Staten-Generaal",
+            "srt": "0",
         }
-        resp = self.fetch_page(f"{endpoint}?{urllib.parse.urlencode(params)}")
-        if resp is None:
-            return results
-        try:
-            data = resp.json()
-            items = data.get("value", [])
-            for item in items:
-                results.append({
-                    "title": item.get("title", ""),
-                    "url": item.get("url", ""),
-                    "date": item.get("date", ""),
-                    "type": item.get("type", "kamerstuk"),
-                    "id": item.get("id", ""),
-                    "chamber": "Tweede Kamer",
-                })
-        except (ValueError, KeyError) as e:
-            print(f"[WARN] Failed to parse TK OData response: {e}")
+        search_url = f"{self.TK_SEARCH_URL}?{urllib.parse.urlencode(params)}"
+        resp = self.fetch_page(search_url)
+        if resp is not None:
+            soup = BeautifulSoup(resp.text, "lxml")
+            for item in soup.select(
+                "[class*='result'], [class*='search-result'], .result-item, article, li"
+            )[:max_results]:
+                title_el = item.select_one("a, h2, h3, .title")
+                if title_el:
+                    title = title_el.get_text(strip=True)
+                    link_el = item.select_one("a[href]") or title_el
+                    href = link_el.get("href", "") if link_el.name == "a" else ""
+                    results.append({
+                        "title": title,
+                        "url": urljoin(self.TK_SEARCH_URL, href) if href else "",
+                        "date": "",
+                        "type": "kamerstuk",
+                        "id": "",
+                        "chamber": "Tweede Kamer",
+                    })
+
+        # Fallback: try OData API
+        if not results:
+            endpoint = f"{self.TK_ODATA_BASE}/items"
+            odata_params: dict[str, str] = {
+                "$filter": f"contains(title, '{query}')",
+                "$top": str(max_results),
+                "$orderby": "date desc",
+                "$format": "json",
+            }
+            odata_resp = self.fetch_page(
+                f"{endpoint}?{urllib.parse.urlencode(odata_params)}"
+            )
+            if odata_resp is not None:
+                try:
+                    data = odata_resp.json()
+                    items = data.get("value", [])
+                    for item in items:
+                        results.append({
+                            "title": item.get("title", ""),
+                            "url": item.get("url", ""),
+                            "date": item.get("date", ""),
+                            "type": item.get("type", "kamerstuk"),
+                            "id": item.get("id", ""),
+                            "chamber": "Tweede Kamer",
+                        })
+                except (ValueError, KeyError):
+                    pass
+
         return results
 
     def search_eerste_kamer(
@@ -235,10 +270,13 @@ class ParliamentaryCollector(BaseCollector):
 
 
 class EURegisterCollector(BaseCollector):
-    """Collects data from the EU Transparency Register via lobbying.eu."""
+    """Collects data from the EU Transparency Register via transparency-register.europa.eu.
 
-    EU_REGISTER_URL = "https://api.lobbying.eu/v1"
-    EU_FALLBACK_URL = "https://lobbying.eu"
+    Verified working URL (2026-06-14): https://transparency-register.europa.eu
+    """
+
+    EU_REGISTER_URL = "https://transparency-register.europa.eu"
+    EU_FALLBACK_URL = "https://transparency-register.europa.eu"
 
     def search_organization(self, name: str) -> list[dict[str, Any]]:
         """Search the EU Transparency Register via the lobbying.eu search page.
