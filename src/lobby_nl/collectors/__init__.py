@@ -473,17 +473,16 @@ class WebCollector(BaseCollector):
         return filtered
 
     def _fetch_page_robust(self, url: str, check_robots: bool = True) -> tuple[Optional[requests.Response], Optional[OpacitySignal]]:
+        robot_signal: Optional[OpacitySignal] = None
         if check_robots:
-            block_signal = self._check_robots_txt(url)
-            if block_signal:
-                return None, block_signal
+            robot_signal = self._check_robots_txt(url)
 
         t0 = time.time()
         resp = self.fetch_page(url)
         if resp is not None:
             elapsed = time.time() - t0
             resp.headers["X-Fetch-Time"] = f"{elapsed:.1f}"
-            return resp, None
+            return resp, robot_signal
 
         self.console.log(f"{self._url_prefix()} {url} — 403, Playwright fallback...")
         html = self._fetch_with_playwright(url)
@@ -495,7 +494,7 @@ class WebCollector(BaseCollector):
             fake_resp.url = url
             fake_resp.encoding = "utf-8"
             fake_resp.headers["X-Collector"] = "playwright_fallback"
-            return fake_resp, None
+            return fake_resp, robot_signal
 
         self.console.log(f"{self._url_prefix()} {url} — 403, Crawl4AI stealth fallback...")
         html = self._fetch_with_crawl4ai(url)
@@ -508,7 +507,6 @@ class WebCollector(BaseCollector):
                 follow_up_target=True,
             )
             self._opacity_signals.append(fallback_signal)
-
             from requests import Response
             fake_resp = Response()
             fake_resp.status_code = 200
@@ -531,9 +529,9 @@ class WebCollector(BaseCollector):
             fake_resp.url = url
             fake_resp.encoding = "utf-8"
             fake_resp.headers["X-Collector"] = "wayback_fallback"
-            return fake_resp, None
+            return fake_resp, robot_signal
 
-        return None, None
+        return None, robot_signal or None
 
     def collect_urls(self, urls: list[str]) -> list[Source]:
         sources: list[Source] = []
@@ -643,31 +641,34 @@ class WebCollector(BaseCollector):
                 self.console.log(f"{self._url_prefix()} {url} — TIMEOUT ({elapsed:.0f}s > {URL_TIMEOUT}s), opacity_signal + doorgaan")
                 continue
 
-            if block_signal and not resp:
-                self._stats["blocked_opacity"] += 1
-                self._failures.append({"url": url, "status": 403, "error_type": "403", "attempts": attempts_tried, "result": "opacity_signal"})
-                self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] consistent 403 na {len(attempts_tried)} pogingen — opacity_signal aangemaakt, doorgaan")
-                sources.append(Source(url=url, is_dead=True,
-                    notes=f"Blocked by robots.txt: {block_signal.description}",
-                    metadata={"collector": self.__class__.__name__, "opacity_signal": block_signal.signal_id}))
+            if resp is None:
+                if block_signal:
+                    self._stats["blocked_opacity"] += 1
+                    self._failures.append({"url": url, "status": 403, "error_type": "403", "attempts": attempts_tried, "result": "opacity_signal"})
+                    self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] na {len(attempts_tried)} pogingen — opacity_signal aangemaakt, doorgaan")
+                    sources.append(Source(url=url, is_dead=True,
+                        notes=f"Blocked: {block_signal.description}",
+                        metadata={"collector": self.__class__.__name__, "opacity_signal": block_signal.signal_id}))
+                else:
+                    self._stats["dead"] += 1
+                    self._failures.append({"url": url, "status": 0, "error_type": "dead", "attempts": attempts_tried, "result": "dead"})
+                    self.console.log(f"{self._url_prefix()} {url} — dead after all fallbacks")
+                    sources.append(Source(url=url, is_dead=True))
                 if not same_domain:
                     continue
-                alternatives = self._find_alternative_entry(url)
-                for alt_url in alternatives:
-                    if alt_url not in visited:
-                        to_visit.append((alt_url, depth + 1))
-                continue
-            if resp is None:
-                self._stats["dead"] += 1
-                self._failures.append({"url": url, "status": 0, "error_type": "dead", "attempts": attempts_tried, "result": "dead"})
-                self.console.log(f"{self._url_prefix()} {url} — [BLOCKED] na {len(attempts_tried)} pogingen — opacity_signal aangemaakt, doorgaan")
-                sources.append(Source(url=url, is_dead=True))
+                if block_signal:
+                    alternatives = self._find_alternative_entry(url)
+                    for alt_url in alternatives:
+                        if alt_url not in visited:
+                            to_visit.append((alt_url, depth + 1))
                 continue
 
             collector_meta = resp.headers.get("X-Collector", self.__class__.__name__)
             title, text = self.extract_html_content(resp.text, url)
             src = self.create_source(url, text, title)
             src.metadata["collector"] = collector_meta
+            if block_signal:
+                self.console.log(f"{self._url_prefix()} {url} — robots.txt BLOCKED maar opgehaald via {collector_meta} fallback")
             sources.append(src)
             self._save_raw(url, resp.text)
 
