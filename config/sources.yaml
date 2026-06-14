@@ -175,3 +175,47 @@ crawl_depth_overrides:
   volkskrant.nl: 1
   nrc.nl: 1
   default: 1
+
+# === SEED DOMAIN LINK-FILTERING ===
+# Per domein: welke URL-paden mogen gecrawld worden.
+# Lege allowed_path_patterns [] → alle links op dat domein volgen.
+# Links naar andere domeinen worden altijd geweigerd.
+seed_domains:
+  rijksoverheid.nl:
+    allowed_path_patterns:
+      - "/onderwerpen/israel"
+      - "/onderwerpen/midden-oosten"
+      - "/onderwerpen/antisemitisme"
+      - "/onderwerpen/buitenlands-beleid"
+      - "/kamerstuk"
+      - "/brief"
+      - "/rapport"
+    max_depth: 1
+  open.overheid.nl:
+    allowed_path_patterns:
+      - "/documenten"
+      - "/resultaten"
+    max_depth: 1
+  cidi.nl:
+    allowed_path_patterns: []
+    max_depth: 2
+  palestina-komitee.nl:
+    allowed_path_patterns: []
+    max_depth: 2
+  christenenvoorisrael.nl:
+    allowed_path_patterns: []
+    max_depth: 2
+  transparency-register.europa.eu:
+    allowed_path_patterns:
+      - "/public-consultation"
+      - "/organisation"
+    max_depth: 1
+  ec.europa.eu:
+    allowed_path_patterns:
+      - "/transparencyregister"
+    max_depth: 1
+  zoek.officielebekendmakingen.nl:
+    allowed_path_patterns:
+      - "/resultaten"
+      - "/document"
+    max_depth: 1

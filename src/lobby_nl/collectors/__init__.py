@@ -87,6 +87,29 @@ def _get_crawl_depth_for_url(url: str, overrides: Optional[dict[str, int]] = Non
     domain = _get_domain_from_url(url)
     return overrides.get(domain, overrides.get("default", 1))
 
+
+def _load_seed_domains(config_path: Optional[Path] = None) -> dict[str, dict]:
+    domains: dict[str, dict] = {}
+    if config_path is None:
+        config_path = Path("config/sources.yaml")
+    if not config_path.exists():
+        return domains
+    try:
+        import yaml
+        with open(config_path, encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+        raw = cfg.get("seed_domains", {})
+        if isinstance(raw, dict):
+            for domain, domain_cfg in raw.items():
+                if isinstance(domain_cfg, dict):
+                    domains[domain] = {
+                        "allowed_path_patterns": domain_cfg.get("allowed_path_patterns", []),
+                        "max_depth": domain_cfg.get("max_depth", 1),
+                    }
+    except Exception:
+        pass
+    return domains
+
 BROWSER_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -241,6 +264,7 @@ class WebCollector(BaseCollector):
             max_retries=max_retries,
         )
         self._depth_overrides = depth_overrides or _load_depth_overrides()
+        self._seed_domains = _load_seed_domains()
         self._opacity_signals: list[OpacitySignal] = []
 
     @property
@@ -347,6 +371,65 @@ class WebCollector(BaseCollector):
             f"{base}/contact",
         ]
         return alternatives
+
+    def _match_domain_path(self, url: str, base_domain: str) -> bool:
+        domain_cfg = self._seed_domains.get(base_domain, {})
+        patterns = domain_cfg.get("allowed_path_patterns", [])
+        if not patterns:
+            return True
+        parsed = urlparse(url)
+        path = parsed.path or "/"
+        return any(path.startswith(p) for p in patterns)
+
+    def _extract_links_static(self, html: str, base_url: str) -> list[str]:
+        soup = parse_html_or_xml(html, url=base_url)
+        links: list[str] = []
+        for a_tag in soup.find_all("a", href=True):
+            href = a_tag["href"]
+            full_url = urljoin(base_url, href)
+            links.append(full_url)
+        return links
+
+    def _fetch_with_playwright_sync(self, url: str) -> Optional[str]:
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context = browser.new_context(
+                    user_agent=_get_random_user_agent(),
+                    locale="nl-NL",
+                    timezone_id="Europe/Amsterdam",
+                )
+                page = context.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_timeout(2000)
+                html = page.content()
+                browser.close()
+                return html
+        except Exception:
+            return None
+
+    def _extract_links_from_page(self, html: str, base_url: str, url: str, base_domain: str, same_domain: bool, visited: set[str]) -> list[str]:
+        links = self._extract_links_static(html, base_url)
+        if len(links) == 0 and len(html) > 5000:
+            self.console.log(f"{self._url_prefix()} {url} — 0 links in statische HTML, Playwright voor link-extractie...")
+            rendered_html = self._fetch_with_playwright_sync(url)
+            if rendered_html:
+                links = self._extract_links_static(rendered_html, base_url)
+                self.console.log(f"{self._url_prefix()} {url} — Playwright link-extractie: {len(links)} links gevonden")
+        filtered: list[str] = []
+        for link in links:
+            link_parsed = urlparse(link)
+            if not link.startswith("http"):
+                continue
+            if same_domain and link_parsed.netloc != base_domain:
+                continue
+            if link in visited:
+                continue
+            if not self._match_domain_path(link, base_domain):
+                continue
+            filtered.append(link)
+        return filtered
 
     def _fetch_page_robust(self, url: str, check_robots: bool = True) -> tuple[Optional[requests.Response], Optional[OpacitySignal]]:
         if check_robots:
@@ -494,16 +577,10 @@ class WebCollector(BaseCollector):
 
             link_count = 0
             if depth < max_depth:
-                soup = parse_html_or_xml(resp.text, url=url)
-                links = soup.find_all("a", href=True)
-                link_count = len(links)
-                for a_tag in links:
-                    href = a_tag["href"]
-                    full_url = urljoin(url, href)
-                    if same_domain and urlparse(full_url).netloc != base_domain:
-                        continue
-                    if full_url.startswith("http") and full_url not in visited:
-                        to_visit.append((full_url, depth + 1))
+                discovered = self._extract_links_from_page(resp.text, url, url, base_domain, same_domain, visited)
+                link_count = len(discovered)
+                for full_url in discovered:
+                    to_visit.append((full_url, depth + 1))
 
             fetch_time = resp.headers.get("X-Fetch-Time", f"{elapsed:.1f}")
             collector_label = "WebCollector"
