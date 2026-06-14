@@ -13,17 +13,22 @@ Usage:
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional
 
 import typer
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 
 app = typer.Typer(
     name="lobby-nl",
     help="Evidence-first OSINT research pipeline for Dutch lobbying practices.",
     no_args_is_help=True,
 )
+
+console = Console()
 
 
 def _get_output_dir() -> Path:
@@ -70,20 +75,31 @@ def collect(
         elif isinstance(data, dict) and "urls" in data:
             urls = data["urls"]
 
-    print(f"[INFO] Collecting from {len(urls)} URLs (depth=domain-config)...")
-    for url in urls:
-        print(f"  Crawling: {url}")
+    console.log(f"[COLLECT] {len(urls)} seed URLs, depth=domain-config")
+    t_start = time.time()
+
+    for i, url in enumerate(urls, 1):
+        web._url_index = i
+        web._url_total = len(urls)
+        web._url_label = url
         page_sources = web.collect_linked_pages(url, max_depth=None)
         sources.extend(page_sources)
-        print(f"    -> {len(page_sources)} pages")
 
-    print("[INFO] Checking archives for collected URLs...")
+    elapsed = time.time() - t_start
+    m, s = divmod(int(elapsed), 60)
+
+    console.log("[INFO] Checking archives for collected URLs...")
     for src in sources:
         if src.url and not src.is_dead:
             archive_url = archive.check_archive(src.url)
             if archive_url:
                 src.archive_url = archive_url
                 src.archive_available = True
+
+    stats = web.get_stats_summary()
+    alive = stats["ok"] + stats["playwright"]
+    console.log(f"[COLLECT DONE] {stats['total_urls']} URLs verwerkt — {alive} OK, {stats['blocked_crawl4ai']} geblokkeerd (Crawl4AI), {stats['blocked_opacity']} geblokkeerd (opacity_signal), {stats['dead']} dood")
+    console.log(f"[COLLECT DONE] Totaal: {stats['total_linked']} pagina's gecollect in {m}m {s}s")
 
     all_data = {
         "sources": [s.model_dump() for s in sources],
@@ -127,30 +143,42 @@ def extract(
             src.content_hash = compute_content_hash(src.content_text)
         sources.append(src)
 
-    for src in sources:
-        found_actors = actor_extractor.extract_actors_from_source(src)
-        for name, category in found_actors:
-            actor = Actor(
-                name=name,
-                category=category,
-                source_ids=[src.source_id],
-                description=f"Extracted from {src.url}",
-            )
-            actors.append(actor)
+    total = len(sources)
+    extract_errors = 0
+    for i, src in enumerate(sources, 1):
+        try:
+            found_actors = actor_extractor.extract_actors_from_source(src)
+            for name, category in found_actors:
+                actor = Actor(
+                    name=name,
+                    category=category,
+                    source_ids=[src.source_id],
+                    description=f"Extracted from {src.url}",
+                )
+                actors.append(actor)
 
-        found_claims = claim_extractor.extract_claims(src, [a.actor_id for a in actors])
-        for fc in found_claims:
-            claim = Claim(**fc)
-            claims.append(claim)
+            found_claims = claim_extractor.extract_claims(src, [a.actor_id for a in actors])
+            for fc in found_claims:
+                claim = Claim(**fc)
+                claims.append(claim)
 
-        found_rels = rel_extractor.extract_relationships(src.content_text or "", actors)
-        for fr in found_rels:
-            try:
-                rel = Relationship(**fr)
-                rel.source_ids = [src.source_id]
-                relationships.append(rel)
-            except Exception:
-                pass
+            found_rels = rel_extractor.extract_relationships(src.content_text or "", actors)
+            for fr in found_rels:
+                try:
+                    rel = Relationship(**fr)
+                    rel.source_ids = [src.source_id]
+                    relationships.append(rel)
+                except Exception:
+                    pass
+
+            a_count = len(found_actors)
+            c_count = len(found_claims)
+            if a_count or c_count:
+                console.log(f"[EXTRACT {i}/{total}] {src.source_id} — {a_count} actors, {c_count} claims")
+            elif i % 10 == 0 or i == total:
+                console.log(f"[EXTRACT {i}/{total}] {src.source_id} — 0 actors (leeg)")
+        except Exception:
+            extract_errors += 1
 
     all_data = {
         "actors": [a.model_dump() for a in actors],
@@ -160,7 +188,8 @@ def extract(
     }
     output_path = out_dir / "extracted_data.json"
     output_path.write_text(json.dumps(all_data, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-    typer.echo(f"[OK] Extracted {len(actors)} actors, {len(claims)} claims, {len(relationships)} relationships -> {output_path}")
+    console.log(f"[EXTRACT DONE] {total} pagina's verwerkt — {len(actors)} actors, {len(claims)} claims, {extract_errors} errors")
+    typer.echo(f"[OK] Extracted -> {output_path}")
 
 
 @app.command()
@@ -182,8 +211,13 @@ def classify(
 
     source_texts = {s.source_id: s.content_text for s in sources if s.content_text}
 
+    console.log(f"[CLASSIFY] {len(actors)} actors -> categoriseren...")
     classifier = Classifier()
-    actors = classifier.classify_batch(actors, source_texts)
+    classify_errors = 0
+    try:
+        actors = classifier.classify_batch(actors, source_texts)
+    except Exception:
+        classify_errors = 1
 
     all_data = {
         "actors": [a.model_dump() for a in actors],
@@ -193,6 +227,7 @@ def classify(
     }
     output_path = out_dir / "classified_data.json"
     output_path.write_text(json.dumps(all_data, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    console.log(f"[CLASSIFY] {len(actors)}/{len(actors)} geclassificeerd — {classify_errors} fouten")
     typer.echo(f"[OK] Classified {len(actors)} actors -> {output_path}")
 
 
@@ -232,6 +267,7 @@ def validate(
     if report.warnings:
         for w in report.warnings[:10]:
             typer.secho(f"  WARN: {w['entity_type']}[{w['entity_id']}]: {w['message']}", fg="yellow")
+    console.log(f"[VALIDATE] {len(report.errors)} errors, {len(report.warnings)} warnings")
     typer.echo(f"[OK] Validation report -> {report_path}")
 
 
@@ -267,33 +303,33 @@ def export(
         actors, claims, relationships, sources, events,
         parliamentary, data_gaps, opacity_signals, source_conflicts, exclusions,
     )
-    typer.echo(f"[OK] CSV exports ({len(csv_files)} files) -> {out_dir}")
+    console.log(f"[EXPORT] CSV: {len(csv_files)} files -> {out_dir}")
 
     gephi = GephiExporter(output_dir=out_dir)
     gephi.export_nodes(actors)
     gephi.export_edges(relationships)
-    typer.echo(f"[OK] Gephi exports -> {out_dir}")
+    console.log(f"[EXPORT] Gephi nodes/edges -> {out_dir}")
 
     ore = OpenRefineExporter(output_dir=out_dir)
     ore.export_actors(actors)
     ore.export_relationships(relationships)
     ore.export_sources(sources)
-    typer.echo(f"[OK] OpenRefine exports -> {out_dir}")
+    console.log(f"[EXPORT] OpenRefine -> {out_dir}")
 
     neo = Neo4jExporter(output_dir=out_dir)
     neo.export_cypher(actors, relationships)
-    typer.echo(f"[OK] Neo4j Cypher export -> {out_dir}")
+    console.log(f"[EXPORT] Neo4j Cypher -> {out_dir}")
 
     json_ex = JSONExporter(output_dir=out_dir)
     json_ex.export_evidence_graph(actors, claims, relationships, sources, events)
-    typer.echo(f"[OK] JSON evidence graph -> {out_dir}")
+    console.log(f"[EXPORT] JSON evidence graph -> {out_dir}")
 
     html_ex = HTMLReportExporter(output_dir=reports_dir)
     html_ex.generate_report(
         actors, claims, relationships, sources, events,
         data_gaps, opacity_signals, [], [],
     )
-    typer.echo(f"[OK] HTML report -> {reports_dir}")
+    console.log(f"[REPORT] HTML rapport -> {reports_dir}")
 
 
 @app.command()
@@ -315,13 +351,13 @@ def analyze(
     framing = MediaFramingAnalyzer(output_dir=out_dir)
     patterns = framing.analyze_sources(sources, actors)
     framing.export_framing_log()
-    typer.echo(f"[OK] Detected {len(patterns)} framing patterns")
+    console.log(f"[ANALYZE] {len(patterns)} framing patterns detected")
 
     guesting = framing.detect_recurring_guesting(sources, actors)
     freq_guest_path = out_dir / "recurring_guesting.csv"
     import pandas as pd
     pd.DataFrame(guesting).to_csv(freq_guest_path, index=False)
-    typer.echo(f"[OK] Recurring guesting -> {freq_guest_path}")
+    console.log(f"[ANALYZE] Recurring guesting -> {freq_guest_path}")
 
     archive = ArchiveCollector(output_dir=out_dir / "raw")
     diff_analyzer = ArchiveDiffAnalyzer(output_dir=out_dir)
@@ -341,7 +377,7 @@ def analyze(
                     )
     diff_analyzer.export_diffs()
     diff_analyzer.export_disappearances()
-    typer.echo(f"[OK] Archive diffs -> {out_dir}")
+    console.log(f"[ANALYZE] Archive diffs -> {out_dir}")
 
 
 @app.command()
@@ -359,6 +395,8 @@ def full_pipeline(
     reports_dir = _get_reports_dir()
     reports_dir.mkdir(parents=True, exist_ok=True)
 
+    pipeline_start = time.time()
+
     typer.echo("=" * 60)
     typer.echo("LOBBY NL - OSINT RESEARCH PIPELINE")
     typer.echo("=" * 60)
@@ -366,6 +404,7 @@ def full_pipeline(
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
 
+        t_step = time.time()
         typer.echo("\n[1/6] COLLECTING...")
         collected_path = tmp_path / "collected_data.json"
         if urls_file:
@@ -376,7 +415,6 @@ def full_pipeline(
             archive = ArchiveCollector(output_dir=out_dir / "raw")
             sources = []
 
-            # URLs per cluster
             cluster_urls = {
                 "pro_israel": [
                     "https://www.cidi.nl/",
@@ -409,9 +447,15 @@ def full_pipeline(
                 ],
             }
 
+            url_index = 0
+            total_seeds = sum(len(v) for v in cluster_urls.values())
             for cluster, cluster_urls_list in cluster_urls.items():
-                typer.echo(f"  Cluster: {cluster} ({len(cluster_urls_list)} URLs, depth=domain-config)")
+                console.log(f"  Cluster: {cluster} ({len(cluster_urls_list)} URLs, depth=domain-config)")
                 for url in cluster_urls_list:
+                    url_index += 1
+                    web._url_index = url_index
+                    web._url_total = total_seeds
+                    web._url_label = url
                     page_sources = web.collect_linked_pages(url, max_depth=None)
                     for src in page_sources:
                         if not src.is_dead:
@@ -420,13 +464,17 @@ def full_pipeline(
                                 src.archive_url = archive_url
                                 src.archive_available = True
                     sources.extend(page_sources)
-                    typer.echo(f"    {url}: {len(page_sources)} pages")
+
+            stats = web.get_stats_summary()
+            alive = stats["ok"] + stats["playwright"]
+            console.log(f"[COLLECT DONE] {stats['total_urls']} URLs verwerkt — {alive} OK, {stats['blocked_crawl4ai']} geblokkeerd (Crawl4AI), {stats['blocked_opacity']} geblokkeerd (opacity_signal), {stats['dead']} dood")
+            console.log(f"[COLLECT DONE] Totaal: {stats['total_linked']} pagina's gecollect in {time.time() - t_step:.0f}s")
 
             opacity_signals = [s.model_dump() for s in web.opacity_signals]
             if opacity_signals:
-                typer.echo(f"  [OPACITY] {len(opacity_signals)} signal(s) logged")
+                console.log(f"  [OPACITY] {len(opacity_signals)} signal(s) logged")
                 for sig in web.opacity_signals:
-                    typer.echo(f"    - {sig.signal_type.value}: {sig.description[:100]}")
+                    console.log(f"    - {sig.signal_type.value}: {sig.description[:100]}")
 
             all_data = {
                 "sources": [s.model_dump() for s in sources],
@@ -438,6 +486,7 @@ def full_pipeline(
         else:
             collect(urls_file=None, max_depth=1, output=tmp_path)
 
+        t_step = time.time()
         typer.echo("\n[2/6] EXTRACTING...")
         extracted_path = tmp_path / "extracted.json"
         extract(input_file=collected_path, output=out_dir)
@@ -465,22 +514,34 @@ def full_pipeline(
                 src.content_hash = compute_content_hash(src.content_text)
             sources.append(src)
 
-        for src in sources:
-            found_actors = actor_extractor.extract_actors_from_source(src)
-            for name, category in found_actors:
-                actor = Actor(name=name, category=category, source_ids=[src.source_id], description=f"Extracted from {src.url}")
-                actors.append(actor)
-            found_claims = claim_extractor.extract_claims(src, [a.actor_id for a in actors])
-            for fc in found_claims:
-                claims.append(Claim(**fc))
-            found_rels = rel_extractor.extract_relationships(src.content_text or "", actors)
-            for fr in found_rels:
-                try:
-                    rel = Relationship(**fr)
-                    rel.source_ids = [src.source_id]
-                    relationships.append(rel)
-                except Exception:
-                    pass
+        extract_errors = 0
+        for i, src in enumerate(sources, 1):
+            try:
+                found_actors = actor_extractor.extract_actors_from_source(src)
+                for name, category in found_actors:
+                    actor = Actor(name=name, category=category, source_ids=[src.source_id], description=f"Extracted from {src.url}")
+                    actors.append(actor)
+                found_claims = claim_extractor.extract_claims(src, [a.actor_id for a in actors])
+                for fc in found_claims:
+                    claims.append(Claim(**fc))
+                found_rels = rel_extractor.extract_relationships(src.content_text or "", actors)
+                for fr in found_rels:
+                    try:
+                        rel = Relationship(**fr)
+                        rel.source_ids = [src.source_id]
+                        relationships.append(rel)
+                    except Exception:
+                        pass
+                a_count = len(found_actors)
+                c_count = len(found_claims)
+                if a_count or c_count:
+                    console.log(f"[EXTRACT {i}/{len(sources)}] {src.source_id} — {a_count} actors, {c_count} claims")
+                elif i % 50 == 0:
+                    console.log(f"[EXTRACT {i}/{len(sources)}] {src.source_id} — 0 actors (leeg)")
+            except Exception:
+                extract_errors += 1
+
+        console.log(f"[EXTRACT DONE] {len(sources)} pagina's verwerkt — {len(actors)} actors, {len(claims)} claims, {extract_errors} errors ({time.time() - t_step:.0f}s)")
 
         all_data = {
             "actors": [a.model_dump() for a in actors],
@@ -490,13 +551,19 @@ def full_pipeline(
         }
         extracted_path.write_text(json_mod.dumps(all_data, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
 
+        t_step = time.time()
         typer.echo("\n[3/6] CLASSIFYING...")
         classified_path = tmp_path / "classified.json"
         classify(input_file=extracted_path if extracted_path.exists() else collected_path, output=out_dir)
         from lobby_nl.classifiers import Classifier
         classifier = Classifier()
         source_texts = {s.source_id: s.content_text for s in sources if s.content_text}
-        actors = classifier.classify_batch(actors, source_texts)
+        classify_errors = 0
+        try:
+            actors = classifier.classify_batch(actors, source_texts)
+        except Exception:
+            classify_errors = 1
+        console.log(f"[CLASSIFY] {len(actors)}/{len(actors)} geclassificeerd — {classify_errors} fouten ({time.time() - t_step:.0f}s)")
         classified_data = {
             "actors": [a.model_dump() for a in actors],
             "claims": [c.model_dump() for c in claims],
@@ -581,10 +648,13 @@ Generated: {datetime.now(timezone.utc).isoformat()}
     audit_path.write_text(audit_log, encoding="utf-8")
     typer.echo(f"\n[OK] Audit log -> {audit_path}")
 
+    total_elapsed = time.time() - pipeline_start
+    m, s = divmod(int(total_elapsed), 60)
     typer.echo("\n" + "=" * 60)
     typer.echo("PIPELINE COMPLETE")
     typer.echo(f"Outputs: {out_dir}")
     typer.echo(f"Reports: {reports_dir}")
+    typer.echo(f"Duration: {m}m {s}s")
     typer.echo("=" * 60)
 
 

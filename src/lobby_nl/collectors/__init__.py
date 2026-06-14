@@ -21,9 +21,14 @@ import requests
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 import warnings
 
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn
+
 from lobby_nl.models import OpacityMechanism, OpacitySignal, Source
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+
+_STATS_RESET = {"ok": 0, "blocked_crawl4ai": 0, "blocked_opacity": 0, "dead": 0, "playwright": 0, "total_linked": 0}
 
 
 def parse_html_or_xml(content: str, url: str = "") -> BeautifulSoup:
@@ -114,6 +119,18 @@ class BaseCollector:
         self.request_delay = request_delay
         self.max_retries = max_retries
         self._last_request_time = 0.0
+        self.console = Console()
+        self._stats = dict(_STATS_RESET)
+        self._url_label = ""
+        self._url_index = 0
+        self._url_total = 0
+
+    def _url_prefix(self) -> str:
+        if self._url_label and self._url_total:
+            return f"[COLLECT {self._url_index}/{self._url_total}]"
+        if self._url_label:
+            return f"[COLLECT {self._url_index}]"
+        return "[COLLECT]"
 
     def _rate_limit(self) -> None:
         elapsed = time.time() - self._last_request_time
@@ -130,40 +147,44 @@ class BaseCollector:
         last_exception: Optional[Exception] = None
         for attempt in range(self.max_retries):
             self._rate_limit()
+            t0 = time.time()
             try:
                 resp = self.session.get(url, timeout=timeout)
+                elapsed = time.time() - t0
                 if resp.status_code == 403:
                     self._rotate_user_agent()
                     backoff = (2 ** attempt) + random.uniform(0, 1)
-                    print(f"[RETRY] 403 on {url}, attempt {attempt + 1}/{self.max_retries}, rotating UA, waiting {backoff:.1f}s")
+                    self.console.log(f"{self._url_prefix()} {url} — 403 ({elapsed:.1f}s), UA-rotatie retry {attempt + 1}/{self.max_retries}...")
                     time.sleep(backoff)
                     last_exception = requests.HTTPError(f"403 Forbidden: {url}", response=resp)
                     continue
                 if resp.status_code == 429:
                     backoff = (2 ** attempt) * 5 + random.uniform(0, 5)
-                    print(f"[RETRY] 429 on {url}, attempt {attempt + 1}/{self.max_retries}, waiting {backoff:.1f}s")
+                    self.console.log(f"{self._url_prefix()} {url} — 429 ({elapsed:.1f}s), retry {attempt + 1}/{self.max_retries}...")
                     time.sleep(backoff)
                     continue
                 resp.raise_for_status()
                 return resp
             except (requests.Timeout, requests.ConnectionError) as e:
+                elapsed = time.time() - t0
                 backoff = (2 ** attempt) + random.uniform(0, 1)
-                print(f"[RETRY] Network error on {url}: {e}, attempt {attempt + 1}/{self.max_retries}, waiting {backoff:.1f}s")
+                self.console.log(f"{self._url_prefix()} {url} — network error ({elapsed:.1f}s): {e}, retry {attempt + 1}/{self.max_retries}...")
                 time.sleep(backoff)
                 last_exception = e
             except requests.HTTPError as e:
                 if resp is not None and 500 <= resp.status_code < 600:
+                    elapsed = time.time() - t0
                     backoff = (2 ** attempt) + random.uniform(0, 1)
-                    print(f"[RETRY] {resp.status_code} on {url}, attempt {attempt + 1}/{self.max_retries}, waiting {backoff:.1f}s")
+                    self.console.log(f"{self._url_prefix()} {url} — {resp.status_code} ({elapsed:.1f}s), retry {attempt + 1}/{self.max_retries}...")
                     time.sleep(backoff)
                     last_exception = e
                     continue
-                print(f"[WARN] HTTP error on {url}: {e}")
+                self.console.log(f"{self._url_prefix()} {url} — HTTP error: {e}")
                 return None
             except requests.RequestException as e:
-                print(f"[WARN] Failed to fetch {url}: {e}")
+                self.console.log(f"{self._url_prefix()} {url} — request failed: {e}")
                 return None
-        print(f"[WARN] Failed to fetch {url} after {self.max_retries} retries: {last_exception}")
+        self.console.log(f"{self._url_prefix()} {url} — dead after {self.max_retries} retries: {last_exception}")
         return None
 
     def extract_html_content(self, html: str, url: str) -> tuple[str, str]:
@@ -252,16 +273,24 @@ class WebCollector(BaseCollector):
                     nest_asyncio.apply()
             except RuntimeError:
                 pass
-            return _asyncio.run(_run())
+            t0 = time.time()
+            result = _asyncio.run(_run())
+            elapsed = time.time() - t0
+            if result:
+                self.console.log(f"{self._url_prefix()} {url} — Crawl4AI stealth OK ({elapsed:.1f}s)")
+            else:
+                self.console.log(f"{self._url_prefix()} {url} — Crawl4AI returned empty")
+            return result
         except ImportError:
             return None
         except Exception as e:
-            print(f"[WARN] Crawl4AI fallback failed for {url}: {e}")
+            self.console.log(f"{self._url_prefix()} {url} — Crawl4AI fallback failed: {e}")
             return None
 
     def _fetch_with_playwright(self, url: str) -> Optional[str]:
         try:
             from playwright.sync_api import sync_playwright
+            t0 = time.time()
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
                 context = browser.new_context(
@@ -274,9 +303,11 @@ class WebCollector(BaseCollector):
                 page.wait_for_timeout(2000)
                 html = page.content()
                 browser.close()
+                elapsed = time.time() - t0
+                self.console.log(f"{self._url_prefix()} {url} — Playwright fallback OK ({elapsed:.1f}s)")
                 return html
         except Exception as e:
-            print(f"[WARN] Playwright fallback failed for {url}: {e}")
+            self.console.log(f"{self._url_prefix()} {url} — Playwright fallback failed: {e}")
             return None
 
     def _check_robots_txt(self, url: str) -> Optional[OpacitySignal]:
@@ -298,10 +329,10 @@ class WebCollector(BaseCollector):
                     follow_up_target=True,
                 )
                 self._opacity_signals.append(signal)
-                print(f"[OPACITY] robots.txt blocks {url}")
+                self.console.log(f"{self._url_prefix()} {url} — ROBOTS.TXT BLOCK, alternatieven zoeken...")
                 return signal
         except Exception as e:
-            print(f"[INFO] Could not check robots.txt for {url}: {e}")
+            self.console.log(f"{self._url_prefix()} {url} — robots.txt check failed: {e}")
         return None
 
     def _find_alternative_entry(self, url: str) -> list[str]:
@@ -323,11 +354,14 @@ class WebCollector(BaseCollector):
             if block_signal:
                 return None, block_signal
 
+        t0 = time.time()
         resp = self.fetch_page(url)
         if resp is not None:
+            elapsed = time.time() - t0
+            resp.headers["X-Fetch-Time"] = f"{elapsed:.1f}"
             return resp, None
 
-        print(f"[INFO] Attempting Playwright fallback for {url}...")
+        self.console.log(f"{self._url_prefix()} {url} — 403, Playwright fallback...")
         html = self._fetch_with_playwright(url)
         if html:
             from requests import Response
@@ -339,7 +373,7 @@ class WebCollector(BaseCollector):
             fake_resp.headers["X-Collector"] = "playwright_fallback"
             return fake_resp, None
 
-        print(f"[INFO] Attempting Crawl4AI stealth fallback for {url}...")
+        self.console.log(f"{self._url_prefix()} {url} — 403, Crawl4AI stealth fallback...")
         html = self._fetch_with_crawl4ai(url)
         if html:
             fallback_signal = OpacitySignal(
@@ -364,9 +398,19 @@ class WebCollector(BaseCollector):
 
     def collect_urls(self, urls: list[str]) -> list[Source]:
         sources: list[Source] = []
-        for url in urls:
+        total_urls = len(urls)
+        for i, url in enumerate(urls, 1):
+            self._url_index = i
+            self._url_total = total_urls
+            self._url_label = url
+            self.console.log(f"{self._url_prefix()} {url} — WebCollector...")
+
+            t0 = time.time()
             resp, _sig = self._fetch_page_robust(url)
+            elapsed = time.time() - t0
+
             if resp is None:
+                self._stats["dead"] += 1
                 sources.append(
                     Source(
                         url=url,
@@ -383,6 +427,20 @@ class WebCollector(BaseCollector):
             src.metadata["collector"] = collector_meta
             sources.append(src)
             self._save_raw(url, resp.text)
+
+            fetch_time = resp.headers.get("X-Fetch-Time", f"{elapsed:.1f}")
+            collector_label = "WebCollector"
+            if "playwright" in collector_meta.lower():
+                collector_label = "Playwright"
+                self._stats["playwright"] += 1
+            elif "crawl4ai" in collector_meta.lower():
+                collector_label = "Crawl4AI"
+                self._stats["blocked_crawl4ai"] += 1
+            else:
+                self._stats["ok"] += 1
+
+            self.console.log(f"{self._url_prefix()} {url} — OK via {collector_label} ({fetch_time}s)")
+
         return sources
 
     def collect_linked_pages(
@@ -394,13 +452,24 @@ class WebCollector(BaseCollector):
         visited: set[str] = set()
         to_visit = [(base_url, 0)]
         base_domain = urlparse(base_url).netloc
+        url_index = 0
         while to_visit:
             url, depth = to_visit.pop(0)
             if url in visited or depth > max_depth:
                 continue
             visited.add(url)
+            url_index += 1
+            self._url_index = url_index
+            self._url_total = url_index + len(to_visit)
+            self._url_label = url
+            self.console.log(f"{self._url_prefix()} {url} — WebCollector...")
+
+            t0 = time.time()
             resp, block_signal = self._fetch_page_robust(url)
+            elapsed = time.time() - t0
+
             if block_signal and not resp:
+                self._stats["blocked_opacity"] += 1
                 sources.append(Source(url=url, is_dead=True,
                     notes=f"Blocked by robots.txt: {block_signal.description}",
                     metadata={"collector": self.__class__.__name__, "opacity_signal": block_signal.signal_id}))
@@ -412,24 +481,49 @@ class WebCollector(BaseCollector):
                         to_visit.append((alt_url, depth + 1))
                 continue
             if resp is None:
+                self._stats["dead"] += 1
                 sources.append(Source(url=url, is_dead=True))
                 continue
+
             collector_meta = resp.headers.get("X-Collector", self.__class__.__name__)
             title, text = self.extract_html_content(resp.text, url)
             src = self.create_source(url, text, title)
             src.metadata["collector"] = collector_meta
             sources.append(src)
             self._save_raw(url, resp.text)
+
+            link_count = 0
             if depth < max_depth:
                 soup = parse_html_or_xml(resp.text, url=url)
-                for a_tag in soup.find_all("a", href=True):
+                links = soup.find_all("a", href=True)
+                link_count = len(links)
+                for a_tag in links:
                     href = a_tag["href"]
                     full_url = urljoin(url, href)
                     if same_domain and urlparse(full_url).netloc != base_domain:
                         continue
                     if full_url.startswith("http") and full_url not in visited:
                         to_visit.append((full_url, depth + 1))
+
+            fetch_time = resp.headers.get("X-Fetch-Time", f"{elapsed:.1f}")
+            collector_label = "WebCollector"
+            if "playwright" in collector_meta.lower():
+                collector_label = "Playwright"
+                self._stats["playwright"] += 1
+            elif "crawl4ai" in collector_meta.lower():
+                collector_label = "Crawl4AI"
+                self._stats["blocked_crawl4ai"] += 1
+            else:
+                self._stats["ok"] += 1
+
+            self.console.log(f"{self._url_prefix()} {url} — OK via {collector_label} ({fetch_time}s) — {link_count} links gevonden")
+
+        self._stats["total_linked"] += len(sources)
         return sources
+
+    def get_stats_summary(self) -> dict:
+        total_urls = sum(self._stats[k] for k in ("ok", "blocked_crawl4ai", "blocked_opacity", "dead", "playwright"))
+        return {**self._stats, "total_urls": total_urls}
 
     def _save_raw(self, url: str, html: str) -> None:
         safe_name = re.sub(r"[^a-zA-Z0-9]", "_", url)[:100]
