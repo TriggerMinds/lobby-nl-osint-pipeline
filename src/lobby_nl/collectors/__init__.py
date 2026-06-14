@@ -168,7 +168,7 @@ class ParliamentaryCollector(BaseCollector):
 
         endpoint = f"{self.TK_ODATA_BASE}/items"
         params: dict[str, str] = {
-            "$filter": f"substringof('{query}', title)",
+            "$filter": f"contains(title, '{query}')",
             "$top": str(max_results),
             "$orderby": "date desc",
             "$format": "json",

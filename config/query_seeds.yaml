@@ -149,3 +149,88 @@ query_seeds:
       - 'lobbykantoor Israël Den Haag'
       - 'public affairs Israël Nederland'
       - 'advocatenkantoor Israël zaken Nederland'
+
+  # JOURNALISTEN & PRESENTATOREN
+  journalisten_presentatoren:
+    nl:
+      - 'NOS journalist Israël Palestina'
+      - 'RTL nieuws presentator Israël'
+      - 'Nieuwsuur presentator Midden-Oosten'
+      - 'talkshow host Israël mening'
+      - 'Op1 presentator Gaza'
+      - 'WNL presentator Israël'
+
+  # TALKSHOWS
+  talkshows:
+    nl:
+      - 'Op1 Israël uitzending'
+      - 'WNL Israël debat'
+      - 'Buitenhof Midden-Oosten gast'
+      - 'talkshow Israël Nederland politiek'
+      - 'Jinek Midden-Oosten'
+      - 'Humberto Israël Palestina'
+      - 'Bar Laat Israël'
+
+  # BURGEMEESTERS & LOKALE POLITICI
+  burgemeesters_lokale_politici:
+    nl:
+      - 'burgemeester Israël standpunt'
+      - 'burgemeester Amsterdam Israël'
+      - 'burgemeester Den Haag Israël'
+      - 'burgemeester Rotterdam Midden-Oosten'
+      - 'gemeenteraad Israël motie'
+      - 'wethouder Israël Gaza'
+      - 'lokale politiek Israël standpunt'
+
+  # NCTV & VEILIGHEID
+  nctv_veiligheid:
+    nl:
+      - 'NCTV Israël dreiging'
+      - 'NCTV Gaza veiligheid Nederland'
+      - 'NCTV antisemitisme rapport'
+      - 'terrorismedreiging Israël Nederland'
+      - 'veiligheidsregio Israël demonstratie'
+      - 'politie Israël protest Nederland'
+
+  # DENKTANKS
+  denktanks:
+    nl:
+      - 'Clingendael Israël rapport'
+      - 'Clingendael Midden-Oosten beleid'
+      - 'WRR Israël Palestina'
+      - 'denktank Israël Nederland invloed'
+      - 'think tank Israel Palestine Netherlands'
+      - 'HCSS Israël veiligheid'
+      - 'Instituut Clingendael Gaza'
+
+  # BEKENDE NEDERLANDERS
+  bekende_nederlanders:
+    nl:
+      - 'bekende Nederlander Israël standpunt'
+      - 'publiek figuur Israël mening'
+      - 'beroemdheid Palestina solidariteit'
+      - 'BN-er Israël reis'
+      - 'acteur Israël uitspraak'
+      - 'artiest Gaza solidariteit'
+      - 'sporter Israël boycot'
+
+  # WOO BRONNEN
+  woo_bronnen:
+    nl:
+      - 'site:woo.nl Israël'
+      - 'site:rijksoverheid.nl Woo Israël'
+      - 'Woo-verzoek Israël Nederland'
+      - 'Woo-besluit Gaza Nederland'
+      - 'Woo-document antisemitisme'
+      - 'openbaar gemaakte documenten Israël ambassade'
+      - 'site:rijksoverheid.nl documenten woo Israël'
+
+  # EVENTS
+  events:
+    nl:
+      - 'conferentie Israël Nederland 2025'
+      - 'conferentie Israël Nederland 2026'
+      - 'evenement zionisme Nederland'
+      - 'Israël symposium Nederland'
+      - 'Midden-Oosten conferentie Den Haag'
+      - 'Israel lezing Nederland universiteit'

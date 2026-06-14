@@ -155,9 +155,11 @@ def extract(
     output: Optional[Path] = typer.Option(None, help="Output directory"),
 ) -> None:
     """Extract actors, relationships, and claims from collected sources."""
-    from lobby_nl.extractors import ActorExtractor, ClaimExtractor, RelationshipExtractor
+    from lobby_nl.extractors import ActorExtractor, ClaimExtractor, RelationshipExtractor, MediaFramingExtractor
     from lobby_nl.models import Actor, Claim, Relationship, Source
     from lobby_nl.utils import compute_content_hash
+
+    import pandas as pd
 
     out_dir = _resolve_output_dir(output)
     data = json.loads(input_file.read_text(encoding="utf-8"))
@@ -202,11 +204,21 @@ def extract(
             except Exception:
                 pass
 
+    framing_extractor = MediaFramingExtractor()
+    framing_results = framing_extractor.extract_batch(sources, actors)
+    if framing_results:
+        exports_dir = Path("exports")
+        exports_dir.mkdir(parents=True, exist_ok=True)
+        framing_path = exports_dir / "media_framing_log.csv"
+        pd.DataFrame(framing_results).to_csv(framing_path, index=False)
+        typer.echo(f"[OK] Media framing patterns: {len(framing_results)} -> {framing_path}")
+
     all_data = {
         "actors": [a.model_dump() for a in actors],
         "claims": [c.model_dump() for c in claims],
         "relationships": [r.model_dump() for r in relationships],
         "sources": [s.model_dump() for s in sources],
+        "media_framing": framing_results,
     }
     output_path = out_dir / "extracted_data.json"
     output_path.write_text(
